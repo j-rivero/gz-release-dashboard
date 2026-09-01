@@ -1,0 +1,9 @@
+{
+  "name": "gz-sim9",
+  "latest_version": "9.6.0",
+  "versions": ["9.0.0", "9.5.0", "9.6.0"],
+  "files": [
+    {"version": "9.5.0", "attrs": {"subdir": "linux-64"}},
+    {"version": "9.6.0", "attrs": {"subdir": "linux-64"}}
+  ]
+}

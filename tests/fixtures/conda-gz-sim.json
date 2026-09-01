@@ -1,0 +1,17 @@
+{
+  "name": "gz-sim",
+  "latest_version": "10.5.0",
+  "versions": ["8.9.0", "9.4.0", "10.0.0", "9.5.0", "10.4.0", "10.5.0"],
+  "platforms": {"linux-64": "10.5.0", "osx-arm64": "10.5.0", "linux-ppc64le": "9.5.0"},
+  "files": [
+    {"version": "9.4.0", "attrs": {"subdir": "linux-64"}},
+    {"version": "9.5.0", "attrs": {"subdir": "linux-64"}},
+    {"version": "10.4.0", "attrs": {"subdir": "linux-64"}},
+    {"version": "10.5.0", "attrs": {"subdir": "linux-64"}},
+    {"version": "10.5.0", "attrs": {"subdir": "osx-arm64"}},
+    {"version": "9.5.0", "attrs": {"subdir": "osx-arm64"}},
+    {"version": "9.5.0", "attrs": {"subdir": "linux-ppc64le"}},
+    {"version": "10.5.0", "attrs": {}},
+    {"version": "not-a-version", "attrs": {"subdir": "win-64"}}
+  ]
+}
