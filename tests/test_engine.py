@@ -70,7 +70,7 @@ def test_a_development_major_is_measured_against_its_prerelease():
         ("10.5.0", "10.5.0", Status.UP_TO_DATE),
         ("10.4.0", "10.5.0", Status.BEHIND),
         ("10.6.0", "10.5.0", Status.AHEAD),
-        ("10.6.0-pre1", "10.6.0-pre1", Status.PRERELEASE),
+        ("10.6.0-pre1", "10.6.0-pre1", Status.UP_TO_DATE),
         ("10.5.0", None, Status.AHEAD),
     ],
 )
@@ -145,7 +145,7 @@ def test_an_in_development_collection_is_not_expected_on_stable_channels():
         [record("gz-sim", 11, "11.0.0-pre1")],
     )
     result = statuses(s)
-    assert result[("gz-sim", "stable", "noble", "amd64")] is Status.PRERELEASE
+    assert result[("gz-sim", "stable", "noble", "amd64")] is Status.UP_TO_DATE
     assert result[("gz-math", "stable", "noble", "amd64")] is Status.NOT_EXPECTED
 
 
@@ -195,3 +195,26 @@ def test_problems_exclude_ahead_and_staging_channels(jetty, truth):
     assert [(e.library, e.channel, e.status) for e in found] == [
         ("gz-math", "stable", Status.BEHIND)
     ]
+
+
+def test_a_matching_prerelease_counts_as_up_to_date():
+    """An unreleased collection shipping exactly its latest tag is not a problem."""
+    dev = Collection("m", True, [Library("gz-sim", 11)])
+    s = build(
+        [dev],
+        [GroundTruthEntry("gz-sim", 11, None, "11.0.0-pre1")],
+        [record("gz-sim", 11, "11.0.0-pre1", channel="prerelease")],
+    )
+    entries = engine.compute_statuses(s)
+    assert [e.status for e in entries] == [Status.UP_TO_DATE]
+    assert engine.problems(entries) == []
+
+
+def test_a_prerelease_behind_its_own_tag_is_still_behind():
+    dev = Collection("m", True, [Library("gz-sim", 11)])
+    s = build(
+        [dev],
+        [GroundTruthEntry("gz-sim", 11, None, "11.0.0-pre3")],
+        [record("gz-sim", 11, "11.0.0-pre1")],
+    )
+    assert engine.compute_statuses(s)[0].status is Status.BEHIND

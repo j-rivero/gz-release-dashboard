@@ -46,3 +46,21 @@ Version: 28.1.9-1noble.20260604.111001
 Architecture: amd64
 Section: misc
 Description: The ROS client library in C++.
+
+Package: ros-lyrical-gz-sim-vendor
+Version: 0.3.0-1resolute.20260604.111001
+Architecture: amd64
+Section: misc
+Description: Vendor package for: gz-sim 10.5.0 Gazebo Sim : A Robotic Simulator
+
+Package: ros-lyrical-gz-fuel-tools-vendor
+Version: 0.3.0-1resolute.20260604.111002
+Architecture: amd64
+Section: misc
+Description: Vendor package for: gz-fuel_tools 11.0.0 Gazebo Fuel Tools
+
+Package: ros-lyrical-gz-tools-vendor
+Version: 0.3.0-1resolute.20260604.111003
+Architecture: amd64
+Section: misc
+Description: Vendor package for: gz-tools2 2.0.3 Gazebo Tools

@@ -27,16 +27,26 @@ DESCRIPTION_RE = re.compile(
 
 
 def parse_description(description: str) -> tuple[str, int, str] | None:
-    """``Vendor package for: gz-fuel_tools9 9.1.1 ...`` -> (gz-fuel-tools, 9, 9.1.1)."""
+    """``Vendor package for: gz-fuel_tools9 9.1.1 ...`` -> (gz-fuel-tools, 9, 9.1.1).
+
+    The upstream name may or may not carry its major version: jazzy and kilted
+    say ``gz-sim8``, while lyrical and rolling say plain ``gz-sim 10.5.0``. When
+    it is absent the version supplies the major, which is the only thing that
+    could have been meant; when it is present the two have to agree.
+    """
     match = DESCRIPTION_RE.search(description or "")
     if not match:
         return None
     library = canonical_library(match.group("pkg").replace("_", "-"))
-    major = int(match.group("major") or 1)
     version = GzVersion.parse(match.group("version"))
-    if version is None or version.major != major:
+    if version is None:
         return None
-    return library, major, str(version)
+    suffix = match.group("major")
+    if suffix is None:
+        return library, version.major, str(version)
+    if version.major != int(suffix):
+        return None
+    return library, int(suffix), str(version)
 
 
 @register_source

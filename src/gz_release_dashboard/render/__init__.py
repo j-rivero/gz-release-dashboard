@@ -14,7 +14,6 @@ STATUS_GLYPHS: dict[Status, str] = {
     Status.BEHIND: "🔶",
     Status.MISSING: "❌",
     Status.AHEAD: "⬆️",
-    Status.PRERELEASE: "🚧",
     Status.NOT_EXPECTED: "—",
 }
 
@@ -23,7 +22,6 @@ STATUS_STYLES: dict[Status, str] = {
     Status.BEHIND: "yellow",
     Status.MISSING: "bold red",
     Status.AHEAD: "cyan",
-    Status.PRERELEASE: "magenta",
     Status.NOT_EXPECTED: "dim",
 }
 
@@ -32,7 +30,6 @@ STATUS_LABELS: dict[Status, str] = {
     Status.BEHIND: "behind",
     Status.MISSING: "missing",
     Status.AHEAD: "ahead",
-    Status.PRERELEASE: "prerelease",
     Status.NOT_EXPECTED: "not expected",
 }
 
@@ -138,7 +135,6 @@ STATUS_CSS: dict[Status, str] = {
     Status.BEHIND: "behind",
     Status.MISSING: "missing",
     Status.AHEAD: "ahead",
-    Status.PRERELEASE: "pre",
     Status.NOT_EXPECTED: "none",
 }
 

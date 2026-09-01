@@ -18,7 +18,6 @@ SEVERITY = {
     Status.MISSING: 5,
     Status.BEHIND: 4,
     Status.AHEAD: 3,
-    Status.PRERELEASE: 2,
     Status.UP_TO_DATE: 1,
     Status.NOT_EXPECTED: 0,
 }
@@ -49,7 +48,9 @@ def compare(found: str | None, expected: str | None) -> Status:
         return Status.AHEAD
     if found_version < expected_ver:
         return Status.BEHIND
-    return Status.PRERELEASE if found_version.is_prerelease else Status.UP_TO_DATE
+    # A prerelease that matches what the channel is meant to hold is simply up
+    # to date; the version string already says it is a prerelease.
+    return Status.UP_TO_DATE
 
 
 def absence_status(

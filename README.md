@@ -51,7 +51,6 @@ default so a lagging package never blocks a deploy.
 | 🔶 | behind the latest release tag |
 | ❌ | not published where it was expected |
 | ⬆️ | ahead of the latest tag (reported, never a problem) |
-| 🚧 | a prerelease, which is what this channel should hold |
 | — | never expected here |
 | · | the source was not fetched, or does not reach this collection |
 

@@ -83,6 +83,10 @@ def test_collection_membership_needs_no_rosdistro_table(http):
         ("Vendor package for: gz-fuel_tools9 9.1.1 x", ("gz-fuel-tools", 9, "9.1.1")),
         ("Vendor package for: sdformat14 14.9.0 x", ("sdformat", 14, "14.9.0")),
         ("Vendor package for: ignition-tools 1.5.0 x", ("gz-tools", 1, "1.5.0")),
+        # lyrical and rolling drop the major from the name entirely.
+        ("Vendor package for: gz-sim 10.5.0 x", ("gz-sim", 10, "10.5.0")),
+        ("Vendor package for: gz-cmake 5.1.1 x", ("gz-cmake", 5, "5.1.1")),
+        ("Vendor package for: gz-fuel_tools 11.0.0 x", ("gz-fuel-tools", 11, "11.0.0")),
         ("Vendor package for the DART physics engine v6.13.2", None),
         ("Vendor package for Ogre-next v2.3.3", None),
         ("Vendor package for: gz-sim8 9.0.0 mismatched major", None),
@@ -95,3 +99,22 @@ def test_parse_description(description, expected):
 def test_channels_are_stable_and_pending_sync():
     assert RosVendorSource.channels == ("ros2", "ros2-testing")
     assert "ros2-testing" in config.PRERELEASE_CHANNELS
+
+
+def test_an_unsuffixed_upstream_name_takes_its_major_from_the_version(http):
+    """lyrical and rolling say `gz-sim 10.5.0`, not `gz-sim10 10.5.0`."""
+    jetty = Collection(
+        "jetty", False,
+        [Library("gz-sim", 10), Library("gz-fuel-tools", 11), Library("gz-tools", 2)],
+    )
+    records = {(r.library, r.major): r for r in RosVendorSource(http).fetch([jetty])}
+    assert records[("gz-sim", 10)].upstream_version == "10.5.0"
+    assert records[("gz-sim", 10)].pkg_name == "ros-lyrical-gz-sim-vendor"
+    assert records[("gz-fuel-tools", 11)].upstream_version == "11.0.0"
+    # The suffixed spelling still works alongside it.
+    assert records[("gz-tools", 2)].upstream_version == "2.0.3"
+
+
+def test_an_unsuffixed_name_is_not_silently_treated_as_major_one():
+    # The old fallback mapped `gz-sim 10.5.0` to major 1 and then dropped it.
+    assert parse_description("Vendor package for: gz-sim 10.5.0 x") != ("gz-sim", 1, "10.5.0")

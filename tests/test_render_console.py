@@ -106,7 +106,7 @@ def test_render_shows_a_table_per_collection_with_glyphs():
     assert "jetty" in text and "m  [in development]" in text
     assert "gz-sim (10)" in text and "✅ 10.5.0" in text
     assert "🔶 9.1.0" in text and "→ 9.3.0" in text
-    assert "🚧 11.0.0-pre1" in text
+    assert "✅ 11.0.0-pre1" in text
 
 
 def test_render_lists_the_problems_and_counts_them():

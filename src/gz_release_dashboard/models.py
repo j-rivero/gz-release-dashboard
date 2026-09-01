@@ -13,7 +13,6 @@ class Status(StrEnum):
     BEHIND = "behind"
     MISSING = "missing"
     AHEAD = "ahead"
-    PRERELEASE = "prerelease"
     NOT_EXPECTED = "not_expected"
 
 
