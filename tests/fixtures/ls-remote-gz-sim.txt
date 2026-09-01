@@ -1,0 +1,17 @@
+9a4a5b1c1f6f3d7c2e8b0a1d4c6e8f0a2b4c6d8e	refs/tags/migrated_from_bitbucket
+1111111111111111111111111111111111111111	refs/tags/ignition-gazebo2_2.0.0_pre1
+2222222222222222222222222222222222222222	refs/tags/ignition-gazebo6_6.17.0
+3333333333333333333333333333333333333333	refs/tags/ignition-gazebo6_6.18.0
+3333333333333333333333333333333333333333	refs/tags/ignition-gazebo6_6.18.0^{}
+4444444444444444444444444444444444444444	refs/tags/ignition-gazebo6_6.19.0-pre1
+5555555555555555555555555555555555555555	refs/tags/gz-sim10_10.4.0
+6666666666666666666666666666666666666666	refs/tags/gz-sim10_10.5.0
+6666666666666666666666666666666666666666	refs/tags/gz-sim10_10.5.0^{}
+7777777777777777777777777777777777777777	refs/tags/gz-sim10_10.6.0-pre1
+8888888888888888888888888888888888888888	refs/tags/gz-sim11_11.0.0-pre2
+9999999999999999999999999999999999999999	refs/tags/gz-sim9_9.6.0
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	refs/tags/gz-sim10_10.0.0-bcr-test
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb	refs/heads/main
+cccccccccccccccccccccccccccccccccccccccc	refs/tags/ignition-tools_0.9.0
+dddddddddddddddddddddddddddddddddddddddd	refs/tags/ignition-tools_1.4.1
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee	refs/tags/ignition-tools_1.5.0

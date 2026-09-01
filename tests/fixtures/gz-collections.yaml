@@ -1,0 +1,98 @@
+# Trimmed copy of the real gz-collections.yaml: two released collections (one
+# ignition-era), the in-development `m`, the ignored `rotary`, the metapackages
+# and a reduced lib list.
+spec_version: 1
+
+collections:
+  - name: fortress
+    libs:
+      - name: gz-cmake
+        major_version: 2
+        repo: {current_branch: ign-cmake2}
+      - name: gz-math
+        major_version: 6
+        repo: {current_branch: ign-math6}
+      - name: gz-gui
+        major_version: 6
+        repo: {current_branch: ign-gui6}
+      - name: sdformat
+        major_version: 12
+        repo: {current_branch: sdf12}
+      - name: gz-sim
+        major_version: 6
+        repo: {current_branch: ign-gazebo6}
+      - name: gz-fortress
+        major_version: 1
+        repo: {current_branch: main}
+    ci:
+      configs: [jammy, brew_arm64]
+    packaging:
+      configs: [jammy, brew_arm64]
+      linux:
+        ignore_major_version: [gz-fortress]
+
+  - name: jetty
+    libs:
+      - name: gz-cmake
+        major_version: 5
+        repo: {current_branch: gz-cmake5}
+      - name: gz-math
+        major_version: 9
+        repo: {current_branch: gz-math9}
+      - name: gz-gui
+        major_version: 10
+        repo: {current_branch: gz-gui10}
+      - name: sdformat
+        major_version: 16
+        repo: {current_branch: sdf16}
+      - name: gz-sim
+        major_version: 10
+        repo: {current_branch: gz-sim10}
+      - name: gz-jetty
+        major_version: 1
+        repo: {current_branch: main}
+    ci:
+      configs: [noble, brew_arm64]
+    packaging:
+      configs: [noble, brew_arm64]
+      linux:
+        ignore_major_version: [gz-jetty]
+
+  - name: m
+    libs:
+      - name: gz-cmake
+        major_version: 6
+        repo: {current_branch: main}
+      - name: gz-sim
+        major_version: 11
+        repo: {current_branch: main}
+    ci:
+      configs: []
+    packaging:
+      configs: [resolute]
+
+  - name: rotary
+    libs:
+      - name: gz-cmake
+        repo: {current_branch: main}
+      - name: gz-sim
+        repo: {current_branch: main}
+      - name: gz-rotary
+        major_version: 1
+        repo: {current_branch: main}
+    ci:
+      configs: [noble_no_pr, brew_arm64]
+    packaging:
+      configs: [noble, brew_arm64]
+      linux:
+        ignore_major_version: [gz-cmake, gz-sim, gz-rotary]
+
+packaging_configs:
+  - name: jammy
+    system: {so: linux, distribution: ubuntu, version: jammy, arch: [amd64]}
+  - name: noble
+    system: {so: linux, distribution: ubuntu, version: noble, arch: [amd64]}
+  - name: resolute
+    system: {so: linux, distribution: ubuntu, version: resolute, arch: [amd64]}
+  - name: brew_arm64
+    system: {so: darwin, distribution: macOSX, version: all, arch: [arm64]}
