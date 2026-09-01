@@ -130,7 +130,7 @@ def render(
     verbose: bool = False,
     problems_only: bool = False,
 ) -> int:
-    """Print the dashboard; return the number of problems found."""
+    """Print the dashboard; return the number of affected platform cells."""
     if not problems_only:
         console.print(
             Text(
