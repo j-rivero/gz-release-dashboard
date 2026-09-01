@@ -108,7 +108,15 @@ prefix, head-only brew formulas, and the ignition-era naming throughout.
 ## Publishing
 
 `.github/workflows/dashboard.yml` fetches and deploys to GitHub Pages daily at
-05:17 UTC, and on demand via *Run workflow*. One manual step is needed first:
-in **Settings → Pages**, set **Source** to **GitHub Actions**.
+05:17 UTC, and on demand via *Run workflow*. The published dashboard lives at
+<https://j-rivero.github.io/gz-release-dashboard/>.
+
+Pages has to be told to take its content from the workflow. This repository is
+already configured; a fork needs the setting once, either in **Settings → Pages**
+by setting **Source** to **GitHub Actions**, or with:
+
+```console
+$ gh api --method POST repos/OWNER/REPO/pages -f build_type=workflow
+```
 
 `.github/workflows/ci.yml` runs the test suite on every push and pull request.
