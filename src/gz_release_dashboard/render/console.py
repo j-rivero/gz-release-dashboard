@@ -21,7 +21,9 @@ from . import (
 
 
 def _column_header(source: str, channel: str) -> str:
-    return f"{source_label(source)}\n{channel}" if channel else source_label(source)
+    # Always two lines, so a channel-less source's name never lands in the row
+    # where the reader is looking for channels.
+    return f"{source_label(source)}\n{channel or '(all)'}"
 
 
 def _cell_text(cell) -> Text:
