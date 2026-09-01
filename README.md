@@ -8,7 +8,7 @@ and the in-development `m`) against five sources:
 
 | column | source |
 | --- | --- |
-| `osrf deb` stable / prerelease | [packages.osrfoundation.org](http://packages.osrfoundation.org/gazebo), across focal/jammy/noble/resolute × amd64/arm64/armhf/i386 |
+| `osrf deb` stable / prerelease | [packages.osrfoundation.org](http://packages.osrfoundation.org/gazebo), across every live Ubuntu release × amd64/arm64/armhf/i386 |
 | `bazel` | the [Bazel Central Registry](https://bcr.bazel.build) |
 | `conda` | [conda-forge](https://conda-forge.org), per subdir |
 | `brew` | the [osrf/simulation](https://github.com/osrf/homebrew-simulation) tap, per bottle |
@@ -19,6 +19,21 @@ for the libraries listed in
 [gz-collections.yaml](https://github.com/gazebo-tooling/release-tools/blob/master/jenkins-scripts/dsl/gz-collections.yaml).
 The nightly repository, the collection metapackages and the `rotary` collection
 are all out of scope.
+
+### End-of-life distributions exclude themselves
+
+Which Ubuntu releases get queried is derived per run from the `packaging.configs`
+each live collection declares in `gz-collections.yaml`, resolved through
+`packaging_configs[].system`. Nothing in this repository names a distribution.
+
+That means focal is already absent — no live collection packages for it any more
+— and jammy will drop out on its own the day fortress is retired upstream, with
+no change here. The same list drives the ROS vendor queries, since a ROS distro
+only matters while Gazebo still packages for the Ubuntu release underneath it.
+
+The union across collections is what counts, never the per-collection list:
+upstream under-declares it. jetty names only `noble` yet ships on resolute too,
+so reading the declarations per collection would hide a real column.
 
 ## Usage
 

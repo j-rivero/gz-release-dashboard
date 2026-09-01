@@ -106,3 +106,22 @@ def test_libraries_outside_the_collections_are_dropped(jetty):
     jetty[0].libraries = [Library("gz-sim", 10)]
     records = OsrfDebianSource(http).fetch(jetty)
     assert {r.library for r in records} == {"gz-sim"}
+
+
+def test_only_the_declared_linux_releases_are_queried(jetty):
+    http = FakeHttpClient()
+    http.add_gzip(url("stable", "noble", "amd64"), fixture_text("osrf-packages-stable.txt"))
+    jetty[0].distros = ["noble", "resolute"]
+    OsrfDebianSource(http).fetch(jetty)
+    queried = {u.split("/dists/")[1].split("/")[0] for u in http.requested}
+    assert queried == {"noble", "resolute"}
+    # focal is end of life: no collection declares it, so it is never fetched.
+    assert not any("focal" in u for u in http.requested)
+
+
+def test_the_configured_matrix_is_only_a_fallback(jetty):
+    http = FakeHttpClient()
+    jetty[0].distros = []
+    OsrfDebianSource(http).fetch(jetty)
+    queried = {u.split("/dists/")[1].split("/")[0] for u in http.requested}
+    assert queried == set(config.OSRF_DEB_DISTROS)

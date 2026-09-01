@@ -26,7 +26,10 @@ IN_DEVELOPMENT_FALLBACK = ("m",)
 OSRF_DEB_BASE = "http://packages.osrfoundation.org/gazebo"
 #: channel -> repository directory. The nightly repo is deliberately out of scope.
 OSRF_DEB_CHANNELS = {"stable": "ubuntu-stable", "prerelease": "ubuntu-prerelease"}
-OSRF_DEB_DISTROS = ("focal", "jammy", "noble", "resolute")
+#: Fallback only. The real list is derived per run from the packaging configs
+#: in gz-collections.yaml, which is what keeps end-of-life releases such as
+#: focal off the dashboard without anyone maintaining a list here.
+OSRF_DEB_DISTROS = ("jammy", "noble", "resolute")
 OSRF_DEB_ARCHES = ("amd64", "arm64", "armhf", "i386")
 
 # --- conda-forge ----------------------------------------------------------
@@ -46,7 +49,7 @@ BCR_METADATA_URL = "https://bcr.bazel.build/modules/{module}/metadata.json"
 # --- packages.ros.org -----------------------------------------------------
 ROS_DEB_BASE = "http://packages.ros.org"
 ROS_DEB_CHANNELS = {"ros2": "ros2", "ros2-testing": "ros2-testing"}
-#: jammy/humble ships no gz vendor packages, so it is not probed.
+#: Fallback only; derived from gz-collections.yaml like OSRF_DEB_DISTROS.
 ROS_DEB_DISTROS = ("noble", "resolute")
 ROS_DEB_ARCHES = ("amd64", "arm64")
 

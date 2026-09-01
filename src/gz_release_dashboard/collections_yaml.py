@@ -1,9 +1,11 @@
 """Turn ``gz-collections.yaml`` into the collections the dashboard shows.
 
-Three upstream conventions are decoded here, none of them by hardcoding names:
+Four upstream conventions are decoded here, none of them by hardcoding names:
 a collection under development has no ``ci.configs``; a collection that is not
-released at all (rotary) has libs without ``major_version``; and a collection's
-metapackage is the lib listed in ``packaging.linux.ignore_major_version``.
+released at all (rotary) has libs without ``major_version``; a collection's
+metapackage is the lib listed in ``packaging.linux.ignore_major_version``; and
+the Linux releases still worth querying are the ones the live collections name
+in ``packaging.configs``.
 """
 
 from __future__ import annotations
@@ -23,6 +25,47 @@ def _metapackage_names(entry: dict[str, Any]) -> set[str]:
     return set(linux.get("ignore_major_version") or [])
 
 
+def _linux_platforms(data: dict[str, Any]) -> dict[str, str]:
+    """Packaging config name -> Linux release, e.g. ``{"noble": "noble"}``.
+
+    macOS and Windows configs are left out: they carry no distro axis.
+    """
+    platforms = {}
+    for entry in data.get("packaging_configs") or []:
+        system = entry.get("system") or {}
+        if entry.get("name") and system.get("so") == "linux" and system.get("version"):
+            platforms[entry["name"]] = system["version"]
+    return platforms
+
+
+def _collection_distros(entry: dict[str, Any], platforms: dict[str, str]) -> list[str]:
+    packaging = entry.get("packaging") or {}
+    seen: list[str] = []
+    for name in packaging.get("configs") or []:
+        distro = platforms.get(name)
+        if distro and distro not in seen:
+            seen.append(distro)
+    return seen
+
+
+def linux_distros(collections: list[Collection]) -> tuple[str, ...]:
+    """Every Linux release still targeted by a live collection, oldest first.
+
+    This is what keeps end-of-life distributions off the dashboard without a
+    hardcoded list or an external EOL feed: focal is absent because no live
+    collection packages for it any more, and jammy will drop out by itself the
+    day fortress is retired from gz-collections.yaml. Collections are read in
+    file order and each one's configs in declaration order, so the result stays
+    chronological.
+    """
+    ordered: list[str] = []
+    for collection in collections:
+        for distro in collection.distros:
+            if distro not in ordered:
+                ordered.append(distro)
+    return tuple(ordered)
+
+
 def _is_in_development(entry: dict[str, Any]) -> bool:
     ci = entry.get("ci") or {}
     if not (ci.get("configs") or []):
@@ -35,6 +78,7 @@ def parse_collections(
 ) -> list[Collection]:
     """Parse the YAML text, dropping ignored collections and metapackages."""
     data = yaml.safe_load(text) or {}
+    platforms = _linux_platforms(data)
     collections: list[Collection] = []
     for entry in data.get("collections") or []:
         name = entry.get("name")
@@ -50,7 +94,14 @@ def parse_collections(
         ]
         if not libraries:
             continue
-        collections.append(Collection(name, _is_in_development(entry), libraries))
+        collections.append(
+            Collection(
+                name,
+                _is_in_development(entry),
+                libraries,
+                _collection_distros(entry, platforms),
+            )
+        )
     return collections
 
 

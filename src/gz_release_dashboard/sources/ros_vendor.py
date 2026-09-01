@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 
 from .. import config
+from ..collections_yaml import linux_distros
 from ..models import Collection, PackageRecord
 from ..versions import GzVersion
 from . import register_source
@@ -58,10 +59,13 @@ class RosVendorSource(PackageSource):
 
     def fetch(self, collections: list[Collection]) -> list[PackageRecord]:
         known = {(lib.name, lib.major) for c in collections for lib in c.libraries}
+        # Same list as the osrf repository: a ROS distro only matters here while
+        # Gazebo still packages for the Ubuntu release underneath it.
+        distros = linux_distros(collections) or config.ROS_DEB_DISTROS
         best: dict[tuple, PackageRecord] = {}
         for channel in self.channels:
             repository = config.ROS_DEB_CHANNELS[channel]
-            for distro in config.ROS_DEB_DISTROS:
+            for distro in distros:
                 for arch in config.ROS_DEB_ARCHES:
                     url = packages_url(
                         config.ROS_DEB_BASE, f"{repository}/ubuntu", distro, arch

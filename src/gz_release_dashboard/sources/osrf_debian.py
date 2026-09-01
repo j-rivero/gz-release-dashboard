@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .. import config
+from ..collections_yaml import linux_distros
 from ..models import Collection, PackageRecord
 from ..versions import GzVersion, normalize_deb
 from . import register_source
@@ -19,10 +20,13 @@ class OsrfDebianSource(PackageSource):
 
     def fetch(self, collections: list[Collection]) -> list[PackageRecord]:
         known = {(lib.name, lib.major) for c in collections for lib in c.libraries}
+        # The union across collections, never per collection: upstream
+        # under-declares (jetty lists only noble but ships on resolute too).
+        distros = linux_distros(collections) or config.OSRF_DEB_DISTROS
         best: dict[tuple, PackageRecord] = {}
         for channel in self.channels:
             repository = config.OSRF_DEB_CHANNELS[channel]
-            for distro in config.OSRF_DEB_DISTROS:
+            for distro in distros:
                 for arch in config.OSRF_DEB_ARCHES:
                     url = packages_url(config.OSRF_DEB_BASE, repository, distro, arch)
                     text = self.http.get_gzip_text(url, ok_404=True)

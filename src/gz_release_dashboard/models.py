@@ -29,11 +29,19 @@ class Library:
 
 @dataclass
 class Collection:
-    """A Gazebo collection (jetty, ionic, ...) and the libraries it ships."""
+    """A Gazebo collection (jetty, ionic, ...) and the libraries it ships.
+
+    ``distros`` is the Linux releases the collection declares a packaging
+    config for. It is the set of distros still worth looking at, not a
+    per-collection restriction: upstream under-declares it (jetty lists only
+    noble yet ships on resolute too), so only the union across collections is
+    trustworthy. See :func:`~gz_release_dashboard.collections_yaml.linux_distros`.
+    """
 
     name: str
     in_development: bool
     libraries: list[Library] = field(default_factory=list)
+    distros: list[str] = field(default_factory=list)
 
 
 @dataclass

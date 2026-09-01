@@ -1,6 +1,10 @@
 from conftest import fixture_text
 
-from gz_release_dashboard.collections_yaml import load_collections, parse_collections
+from gz_release_dashboard.collections_yaml import (
+    linux_distros,
+    load_collections,
+    parse_collections,
+)
 from gz_release_dashboard.models import Library
 
 
@@ -58,3 +62,43 @@ def test_load_collections_uses_the_configured_url(http):
 
     http.add(config.COLLECTIONS_YAML_URL, fixture_text("gz-collections.yaml"))
     assert names(load_collections(http)) == ["fortress", "jetty", "m"]
+
+
+def test_each_collection_records_the_linux_releases_it_packages_for(collections):
+    by_name = {c.name: c for c in collections}
+    assert by_name["fortress"].distros == ["jammy"]
+    assert by_name["jetty"].distros == ["noble"]
+    assert by_name["m"].distros == ["resolute"]
+
+
+def test_macos_configs_are_not_mistaken_for_a_distro(collections):
+    # brew_arm64 is so=darwin, version=all; it has no distro axis.
+    assert all("all" not in c.distros for c in collections)
+
+
+def test_end_of_life_releases_drop_out_by_themselves(collections):
+    # focal is absent because no live collection packages for it any more,
+    # not because anything here names it.
+    distros = linux_distros(collections)
+    assert distros == ("jammy", "noble", "resolute")
+    assert "focal" not in distros
+
+
+def test_the_distro_list_is_the_union_never_a_per_collection_filter(collections):
+    # jetty declares only noble upstream, yet ships on resolute too, so the
+    # union is the only trustworthy reading of these declarations.
+    assert "resolute" in linux_distros(collections)
+    jetty = next(c for c in collections if c.name == "jetty")
+    assert "resolute" not in jetty.distros
+
+
+def test_an_ignored_collection_cannot_resurrect_a_distro():
+    text = fixture_text("gz-collections.yaml")
+    only_m = parse_collections(text, ignored=("rotary", "fortress", "jetty"))
+    assert linux_distros(only_m) == ("resolute",)
+
+
+def test_distros_stay_in_chronological_declaration_order(collections):
+    assert list(linux_distros(collections)) == sorted(
+        linux_distros(collections), key=["jammy", "noble", "resolute"].index
+    )

@@ -51,6 +51,7 @@ def from_dict(data: dict[str, Any]) -> Snapshot:
                 name=c["name"],
                 in_development=c["in_development"],
                 libraries=[Library(**lib) for lib in c["libraries"]],
+                distros=list(c.get("distros", [])),
             )
             for c in data.get("collections", [])
         ],
