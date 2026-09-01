@@ -41,3 +41,4 @@ def create_sources(names: list[str] | None, http: Http) -> list[PackageSource]:
 from . import osrf_debian  # noqa: E402,F401
 from . import bazel_registry  # noqa: E402,F401
 from . import conda_forge  # noqa: E402,F401
+from . import homebrew  # noqa: E402,F401
