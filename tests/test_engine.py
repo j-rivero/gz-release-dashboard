@@ -171,13 +171,47 @@ def test_staging_channels_never_report_missing(jetty, truth):
         [jetty],
         truth,
         [
-            record("gz-sim", 10, "10.5.0", channel="prerelease"),
-            record("gz-math", 9, "9.3.0", channel="prerelease"),
-            record("gz-sim", 10, "10.5.0", channel="prerelease", platform="resolute"),
+            record("gz-sim", 10, "10.5.0", source="ros_vendor", channel="ros2-testing",
+                   platform="rolling@noble"),
+            record("gz-math", 9, "9.3.0", source="ros_vendor", channel="ros2-testing",
+                   platform="rolling@noble"),
+            record("gz-sim", 10, "10.5.0", source="ros_vendor", channel="ros2-testing",
+                   platform="rolling@resolute"),
+        ],
+        sources=("ros_vendor",),
+    )
+    result = statuses(s)
+    assert result[("gz-math", "ros2-testing", "rolling@resolute", "amd64")] is (
+        Status.NOT_EXPECTED
+    )
+
+
+def test_an_overlay_channel_is_reported_only_where_it_holds_something(jetty, truth):
+    """No absence cells at all: the osrf prerelease repository sits on top of
+    stable, so an empty slot means nothing is queued, not that something is
+    gone. Only what the source kept -- already filtered down to versions ahead
+    of stable -- gets a cell, and a pending release is exactly what belongs
+    there, so it is up to date whatever the tags say.
+    """
+    s = build(
+        [jetty],
+        truth,
+        [
+            record("gz-sim", 10, "10.6.0-pre1", channel="prerelease"),
+            record("gz-math", 9, "9.3.0"),
         ],
     )
     result = statuses(s)
-    assert result[("gz-math", "prerelease", "resolute", "amd64")] is Status.NOT_EXPECTED
+    assert result[("gz-sim", "prerelease", "noble", "amd64")] is Status.UP_TO_DATE
+    assert ("gz-math", "prerelease", "noble", "amd64") not in result
+
+
+def test_an_overlay_channel_is_up_to_date_even_behind_its_tag(jetty, truth):
+    """A newer tag existing does not make a staged release wrong: it is ahead of
+    stable, which is the whole claim the prerelease column makes.
+    """
+    s = build([jetty], truth, [record("gz-sim", 10, "10.5.1", channel="prerelease")])
+    assert statuses(s)[("gz-sim", "prerelease", "noble", "amd64")] is Status.UP_TO_DATE
 
 
 def test_problems_exclude_ahead_and_staging_channels(jetty, truth):

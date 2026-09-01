@@ -107,6 +107,10 @@ def _observed_combos(
     for record in records:
         if record.source != source:
             continue
+        if config.overlaid_channel(source, record.channel) is not None:
+            # An overlay channel has no matrix to be absent from; it is
+            # reported from the records it actually holds, in _overlay_entries.
+            continue
         platform = (record.channel, record.platform)
         arches_by_platform.setdefault(platform, set()).add(record.arch)
         if (record.library, record.major) in libraries:
@@ -120,6 +124,41 @@ def _observed_combos(
         if len(found) >= needed
         for arch in arches_by_platform[(channel, platform)]
     )
+
+
+def _overlay_entries(
+    records: list[PackageRecord],
+    source: str,
+    collection: Collection,
+    library_keys: set[tuple[str, int]],
+) -> list[StatusEntry]:
+    """Entries for the channels of ``source`` that overlay another channel.
+
+    There is no expected matrix here, so no absence cells: an overlay channel is
+    empty until someone stages a release, and empty is its normal state. What is
+    left after the source has dropped everything stable overtook is by
+    definition ahead of stable -- a release on its way out, which is exactly
+    what the channel should be holding. So it is up to date, full stop; there is
+    nothing for it to be behind.
+    """
+    return [
+        StatusEntry(
+            collection=collection.name,
+            library=record.library,
+            major=record.major,
+            source=source,
+            channel=record.channel,
+            platform=record.platform,
+            arch=record.arch,
+            status=Status.UP_TO_DATE,
+            found_version=record.upstream_version,
+            expected_version=None,
+        )
+        for record in records
+        if record.source == source
+        and config.overlaid_channel(source, record.channel) is not None
+        and (record.library, record.major) in library_keys
+    ]
 
 
 def compute_statuses(snapshot: Snapshot) -> list[StatusEntry]:
@@ -170,6 +209,9 @@ def compute_statuses(snapshot: Snapshot) -> list[StatusEntry]:
                             expected_version=expected,
                         )
                     )
+            entries.extend(
+                _overlay_entries(snapshot.records, source, collection, library_keys)
+            )
     return entries
 
 

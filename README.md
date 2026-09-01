@@ -74,7 +74,7 @@ one missing architecture cannot hide behind eleven green ones, and `(2/6)` says
 how many platforms are affected. The web page expands the same cell into its
 per-platform detail.
 
-Three rules keep the noise down, all of them learned from the live data:
+Four rules keep the noise down, all of them learned from the live data:
 
 - **A platform must carry a real share of a collection** before it is held
   responsible for the rest. Majors are shared between collections (gz-tools 2
@@ -83,9 +83,20 @@ Three rules keep the noise down, all of them learned from the live data:
 - **A library is only expected on an architecture the source builds it for.**
   gz-sim, gz-gui, gz-rendering, gz-launch and gz-sensors are absent from every
   armhf and i386 build by policy, not by oversight.
-- **Staging channels are report-only.** `prerelease` and `ros2-testing` hold
-  whatever happens to be queued at this instant, so a leftover release candidate
-  older than the shipped version is stale rather than broken.
+- **The osrf `prerelease` repository is an overlay on `stable`, not a repository
+  of its own.** Both are enabled together and apt installs whichever version is
+  higher, so an entry counts only while it is ahead of the highest stable version
+  of that major; at or below it, it is the release candidate of a release that
+  already shipped, and is dropped — on every architecture, since lingering on the
+  one architecture stable never built for is exactly how such candidates survive.
+  What is left is a release on its way out — exactly what the channel should hold
+  — so the column shows a version only when something is genuinely queued, and
+  shows it green. Empty is the normal state, and a release going straight to
+  stable with no candidate at all is normal too.
+  `ros2-testing` is deliberately not treated this way: it is a full repository
+  that a sync drains into `ros2`, so being behind there is real.
+- **Staging channels are report-only.** Nothing on `prerelease` or
+  `ros2-testing` ever counts as a problem or moves the exit code.
 
 ## Adding a source
 

@@ -58,6 +58,24 @@ ROS_DEB_ARCHES = ("amd64", "arm64")
 #: tag, and whatever they are missing or holding stale is never a problem --
 #: they contain only what happens to be queued at this instant.
 PRERELEASE_CHANNELS = frozenset({"prerelease", "ros2-testing"})
+#: Channels that overlay another channel of the same source instead of standing
+#: on their own, as ``{source: {channel: the channel it sits on top of}}``.
+#: The osrf prerelease repository is enabled alongside stable, so apt installs
+#: whichever version is higher: a prerelease entry only means something while it
+#: is ahead of stable. Anything at or below stable is the last release candidate
+#: left behind after the release went out, and reporting it would be reporting
+#: on history. ros2-testing is deliberately absent -- it is a full repository
+#: that a sync drains into ros2, not an overlay, so being behind there is real.
+OVERLAY_CHANNELS: dict[str, dict[str, str]] = {
+    "osrf_debian": {"prerelease": "stable"},
+}
+
+
+def overlaid_channel(source: str, channel: str) -> str | None:
+    """The channel ``channel`` sits on top of, or ``None`` if it stands alone."""
+    return OVERLAY_CHANNELS.get(source, {}).get(channel)
+
+
 #: Libraries a source is known never to ship: absence is `—`, not `missing`.
 EXPECTED_ABSENT: dict[str, frozenset[str]] = {
     "bazel_registry": frozenset({"gz-cmake", "gz-tools", "gz-gui", "gz-launch"}),

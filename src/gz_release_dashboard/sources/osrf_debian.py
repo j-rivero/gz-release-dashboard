@@ -40,7 +40,7 @@ class OsrfDebianSource(PackageSource):
                         if record is None or (record.library, record.major) not in known:
                             continue
                         self._keep_newest(best, record)
-        return list(best.values())
+        return self._live_records(best)
 
     def _record(
         self, stanza: dict[str, str], channel: str, distro: str, arch: str
@@ -72,6 +72,45 @@ class OsrfDebianSource(PackageSource):
             raw_version=raw_version,
             upstream_version=upstream,
         )
+
+    @staticmethod
+    def _live_records(best: dict[tuple, PackageRecord]) -> list[PackageRecord]:
+        """Drop prerelease entries that stable has already overtaken.
+
+        Both repositories are enabled together, so apt installs whichever
+        version is higher. A prerelease only means something while it is ahead
+        of stable; at or below it, it is the release candidate of a release that
+        already shipped, and reporting it would be reporting on history. Only
+        one strictly ahead is a pending release worth showing.
+
+        The comparison is against the highest stable version of that major
+        anywhere in the repository, not the one sitting in the same distro and
+        architecture. Once a major has been released, every older candidate for
+        it is history regardless of where it lingers -- and lingering on the one
+        architecture stable never built for is precisely how these survive
+        (harmonic still has gz-msgs10 10.0.0-pre3 on jammy/i386, three minors
+        after 10.4.0 shipped). A major with no stable release at all is the
+        in-development case, and its candidates stand: that is what the
+        repository is for.
+        """
+        shipped: dict[tuple[str, str, int], GzVersion] = {}
+        for record in best.values():
+            version = GzVersion.parse(record.upstream_version)
+            key = (record.channel, record.library, record.major)
+            if version is not None and (
+                key not in shipped or version > shipped[key]
+            ):
+                shipped[key] = version
+        records: list[PackageRecord] = []
+        for record in best.values():
+            base = config.overlaid_channel(record.source, record.channel)
+            if base is not None:
+                released = shipped.get((base, record.library, record.major))
+                staged = GzVersion.parse(record.upstream_version)
+                if released is not None and staged is not None and staged <= released:
+                    continue
+            records.append(record)
+        return records
 
     @staticmethod
     def _keep_newest(best: dict[tuple, PackageRecord], record: PackageRecord) -> None:

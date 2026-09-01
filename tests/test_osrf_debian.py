@@ -94,9 +94,48 @@ def test_the_995_packaging_revision_is_stripped(records):
 
 
 def test_a_staged_prerelease_keeps_its_pre_suffix(records):
-    sim = by_library(records, "prerelease")["gz-sim"]
-    assert sim.raw_version == "10.0.0~pre1-1~noble"
-    assert sim.upstream_version == "10.0.0-pre1"
+    sdf = by_library(records, "prerelease")["sdformat"]
+    assert sdf.raw_version == "16.2.0~pre1-1~noble"
+    assert sdf.upstream_version == "16.2.0-pre1"
+
+
+def test_only_prereleases_ahead_of_stable_survive(records):
+    """The two repositories are enabled together, so apt takes the higher one.
+
+    sdformat 16.2.0-pre1 beats the 16.1.0 in stable and is a pending release.
+    gz-sim 10.0.0-pre1 lost to 10.5.0 long ago and gz-math ties its own stable
+    version: neither is installable, and both are history, not news.
+    """
+    assert set(by_library(records, "prerelease")) == {"sdformat"}
+
+
+def test_a_released_major_buries_its_candidates_on_every_architecture(jetty):
+    """The case that survives a per-architecture comparison and should not.
+
+    Stable never built sdformat 16 for i386, so nothing there outranks an old
+    candidate sitting on i386 -- but 16.1.0 shipped on amd64, which makes
+    16.0.0-pre1 a past release wherever it lingers. This is real: harmonic still
+    has gz-msgs10 10.0.0-pre3 on jammy/i386, three minors after 10.4.0.
+    """
+    http = FakeHttpClient()
+    http.add_gzip(url("stable", "noble", "amd64"), fixture_text("osrf-packages-stable.txt"))
+    http.add_gzip(
+        url("prerelease", "noble", "i386"),
+        "Package: libsdformat16\nSource: sdformat16\n"
+        "Version: 16.0.0~pre1-1~noble\nArchitecture: i386\nSection: libs\n",
+    )
+    records = OsrfDebianSource(http).fetch(jetty)
+    assert by_library(records, "prerelease") == {}
+
+
+def test_a_prerelease_with_no_stable_counterpart_survives(jetty):
+    """The state of an in-development collection: staged, never released."""
+    http = FakeHttpClient()
+    http.add_gzip(
+        url("prerelease", "noble", "amd64"), fixture_text("osrf-packages-prerelease.txt")
+    )
+    records = OsrfDebianSource(http).fetch(jetty)
+    assert by_library(records, "prerelease").keys() == {"gz-sim", "gz-math", "sdformat"}
 
 
 def test_libraries_outside_the_collections_are_dropped(jetty):

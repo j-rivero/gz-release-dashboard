@@ -3,11 +3,18 @@ Source: gz-sim10
 Version: 10.0.0~pre1-1~noble
 Architecture: amd64
 Section: libdevel
-Description: a release candidate staged for promotion
+Description: the release candidate of 10.0.0, left behind once 10.5.0 shipped
 
 Package: libgz-math9
 Source: gz-math9
 Version: 9.3.0-1~noble
 Architecture: amd64
 Section: libs
-Description: Gazebo Math - Shared library
+Description: the very version stable already carries
+
+Package: libsdformat16
+Source: sdformat16
+Version: 16.2.0~pre1-1~noble
+Architecture: amd64
+Section: libs
+Description: a genuine pending release, ahead of the 16.1.0 in stable
