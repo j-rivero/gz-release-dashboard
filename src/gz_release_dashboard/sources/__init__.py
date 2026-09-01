@@ -42,3 +42,4 @@ from . import osrf_debian  # noqa: E402,F401
 from . import bazel_registry  # noqa: E402,F401
 from . import conda_forge  # noqa: E402,F401
 from . import homebrew  # noqa: E402,F401
+from . import ros_vendor  # noqa: E402,F401

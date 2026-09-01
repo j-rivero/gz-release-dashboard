@@ -1,0 +1,48 @@
+Package: ros-jazzy-gz-sim-vendor
+Version: 0.0.10-1noble.20260604.111001
+Architecture: amd64
+Section: misc
+Description: Vendor package for: gz-sim8 8.11.0 Gazebo Sim : A Robotic Simulator
+ This package vendors the upstream library.
+
+Package: ros-jazzy-gz-sim-vendor-dbgsym
+Version: 0.0.10-1noble.20260604.111001
+Architecture: amd64
+Section: debug
+Description: Vendor package for: gz-sim8 8.11.0 debug symbols
+
+Package: ros-jazzy-gz-fuel-tools-vendor
+Version: 0.0.6-1noble.20260423.081524
+Architecture: amd64
+Section: misc
+Description: Vendor package for: gz-fuel_tools9 9.1.1 Gazebo Fuel Tools
+
+Package: ros-jazzy-sdformat-vendor
+Version: 0.0.11-1noble.20260604.104102
+Architecture: amd64
+Section: misc
+Description: Vendor package for: sdformat14 14.9.0 SDFormat is an XML file format
+
+Package: ros-jazzy-gz-dartsim-vendor
+Version: 0.0.3-1noble.20260225.232143
+Architecture: amd64
+Section: misc
+Description: Vendor package for the DART physics engine v6.13.2
+
+Package: ros-jazzy-gz-ogre-next-vendor
+Version: 0.0.5-1noble.20260225.232146
+Architecture: amd64
+Section: misc
+Description: Vendor package for Ogre-next v2.3.3
+
+Package: ros-rolling-gz-sim-vendor
+Version: 0.1.0-1noble.20260604.111001
+Architecture: amd64
+Section: misc
+Description: Vendor package for: gz-sim9 9.6.0 Gazebo Sim : A Robotic Simulator
+
+Package: ros-jazzy-rclcpp
+Version: 28.1.9-1noble.20260604.111001
+Architecture: amd64
+Section: misc
+Description: The ROS client library in C++.
