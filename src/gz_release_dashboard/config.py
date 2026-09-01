@@ -76,6 +76,14 @@ def overlaid_channel(source: str, channel: str) -> str | None:
     return OVERLAY_CHANNELS.get(source, {}).get(channel)
 
 
+#: ROS distributions that track the newest Gazebo instead of pinning to one
+#: collection. Rolling is the only one, and it does not switch cleanly: it keeps
+#: the previous generation's vendor packages around long after moving on, so it
+#: carries two generations at once (jetty's and m's, as of writing). Matching on
+#: (library, major) alone would therefore score jetty against a repository that
+#: has already left it behind -- lyrical is jetty's ROS distribution now. Only
+#: the newest collection Rolling really carries is scored against it.
+ROLLING_ROSDISTROS = frozenset({"rolling"})
 #: Libraries a source is known never to ship: absence is `—`, not `missing`.
 EXPECTED_ABSENT: dict[str, frozenset[str]] = {
     "bazel_registry": frozenset({"gz-cmake", "gz-tools", "gz-gui", "gz-launch"}),

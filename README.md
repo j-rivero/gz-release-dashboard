@@ -74,7 +74,7 @@ one missing architecture cannot hide behind eleven green ones, and `(2/6)` says
 how many platforms are affected. The web page expands the same cell into its
 per-platform detail.
 
-Four rules keep the noise down, all of them learned from the live data:
+Five rules keep the noise down, all of them learned from the live data:
 
 - **A platform must carry a real share of a collection** before it is held
   responsible for the rest. Majors are shared between collections (gz-tools 2
@@ -95,6 +95,14 @@ Four rules keep the noise down, all of them learned from the live data:
   stable with no candidate at all is normal too.
   `ros2-testing` is deliberately not treated this way: it is a full repository
   that a sync drains into `ros2`, so being behind there is real.
+- **ROS Rolling belongs to the newest collection only.** Rolling tracks whatever
+  Gazebo is newest, and it is slow to let the previous generation go: it
+  currently carries 31 vendor packages, all of jetty's and all of m's. Scoring
+  jetty against it would report a permanent lag that no jetty release can fix,
+  because jetty's vendor packages live in `lyrical` now. Every other ROS distro
+  is pinned to one collection and stays with it. The result is one ROS
+  distribution per collection: harmonic→jazzy, ionic→kilted, jetty→lyrical,
+  m→rolling.
 - **Staging channels are report-only.** Nothing on `prerelease` or
   `ros2-testing` ever counts as a problem or moves the exit code.
 

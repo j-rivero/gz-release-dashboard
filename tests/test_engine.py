@@ -252,3 +252,120 @@ def test_a_prerelease_behind_its_own_tag_is_still_behind():
         [record("gz-sim", 11, "11.0.0-pre1")],
     )
     assert engine.compute_statuses(s)[0].status is Status.BEHIND
+
+
+def cells(snapshot):
+    """Which (collection, channel, platform) cells were scored at all."""
+    return {
+        (e.collection, e.channel, e.platform)
+        for e in engine.compute_statuses(snapshot)
+    }
+
+
+def vendor(library, major, version, rosdistro, channel="ros2", distro="noble"):
+    return record(library, major, version, source="ros_vendor", channel=channel,
+                  platform=f"{rosdistro}@{distro}")
+
+
+@pytest.fixture
+def two_generations():
+    """jetty, then m: the order gz-collections.yaml lists them in."""
+    return [
+        Collection("jetty", False, [Library("gz-sim", 10), Library("gz-math", 9)]),
+        Collection("m", True, [Library("gz-sim", 11), Library("gz-math", 10)]),
+    ]
+
+
+@pytest.fixture
+def two_generation_truth():
+    return [
+        GroundTruthEntry("gz-sim", 10, "10.5.0", None),
+        GroundTruthEntry("gz-math", 9, "9.3.0", None),
+        GroundTruthEntry("gz-sim", 11, None, "11.0.0-pre1"),
+        GroundTruthEntry("gz-math", 10, None, "10.0.0-pre1"),
+    ]
+
+
+def test_rolling_is_scored_against_the_newest_collection_that_carries_it(
+    two_generations, two_generation_truth
+):
+    """Rolling keeps the old generation's packages long after it has moved on.
+
+    Both jetty's and m's libraries are in Rolling here, exactly as they are
+    upstream. Scoring jetty against it would report a lag that no jetty release
+    can ever fix, because Rolling is not where jetty goes any more.
+    """
+    s = build(
+        two_generations,
+        two_generation_truth,
+        [
+            vendor("gz-sim", 10, "10.1.1", "rolling"),   # frozen, left behind
+            vendor("gz-math", 9, "9.1.0", "rolling"),
+            vendor("gz-sim", 11, "11.0.0-pre1", "rolling"),
+            vendor("gz-math", 10, "10.0.0-pre1", "rolling"),
+        ],
+        sources=("ros_vendor",),
+    )
+    assert engine.rolling_collection(s) == "m"
+    scored = cells(s)
+    assert ("m", "ros2", "rolling@noble") in scored
+    assert ("jetty", "ros2", "rolling@noble") not in scored
+    assert engine.problems(engine.compute_statuses(s)) == []
+
+
+def test_a_pinned_rosdistro_stays_with_its_own_collection(
+    two_generations, two_generation_truth
+):
+    """Only Rolling moves. lyrical is jetty's ROS distribution and stays there."""
+    s = build(
+        two_generations,
+        two_generation_truth,
+        [
+            vendor("gz-sim", 10, "10.5.0", "lyrical", distro="resolute"),
+            vendor("gz-math", 9, "9.3.0", "lyrical", distro="resolute"),
+            vendor("gz-sim", 11, "11.0.0-pre1", "rolling"),
+            vendor("gz-math", 10, "10.0.0-pre1", "rolling"),
+        ],
+        sources=("ros_vendor",),
+    )
+    assert ("jetty", "ros2", "lyrical@resolute") in cells(s)
+
+
+def test_a_shared_major_cannot_claim_rolling(two_generations, two_generation_truth):
+    """harmonic and ionic each have one library in Rolling; that is a leak.
+
+    The newest collection wins only among those Rolling really carries, so a
+    single shared major must not hand Rolling to a collection it left years ago.
+    """
+    # Four libraries, so the half-share threshold is two: one shared major is
+    # not enough. A two-library collection could not tell the two apart.
+    two_generations.append(
+        Collection("n", True, [
+            Library("gz-sim", 12), Library("gz-math", 11),
+            Library("gz-gui", 12), Library("gz-msgs", 14),
+        ])
+    )
+    s = build(
+        two_generations,
+        two_generation_truth,
+        [
+            vendor("gz-sim", 11, "11.0.0-pre1", "rolling"),
+            vendor("gz-math", 10, "10.0.0-pre1", "rolling"),
+            vendor("gz-sim", 12, "12.0.0-pre1", "rolling"),  # one library of n
+        ],
+        sources=("ros_vendor",),
+    )
+    assert engine.rolling_collection(s) == "m"
+
+
+def test_rolling_with_nothing_recognisable_belongs_to_nobody(
+    two_generations, two_generation_truth
+):
+    s = build(two_generations, two_generation_truth, [], sources=("ros_vendor",))
+    assert engine.rolling_collection(s) is None
+
+
+def test_rosdistro_of_leaves_other_platforms_alone():
+    assert engine.rosdistro_of("rolling@noble") == "rolling"
+    assert engine.rosdistro_of("noble") == "noble"
+    assert engine.rosdistro_of("linux-64") == "linux-64"

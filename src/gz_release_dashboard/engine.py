@@ -126,6 +126,42 @@ def _observed_combos(
     )
 
 
+def rosdistro_of(platform: str) -> str:
+    """``rolling@noble`` -> ``rolling``. Any other platform is its own name."""
+    return platform.split("@", 1)[0]
+
+
+def rolling_collection(snapshot: Snapshot) -> str | None:
+    """The one collection ROS Rolling is scored against, or ``None``.
+
+    Rolling always tracks the newest Gazebo, so it is the newest collection's
+    business and nobody else's. It is also slow to let go: the previous
+    generation's vendor packages sit there for a long time after it has moved
+    on, which is why Rolling currently carries 31 libraries -- all of jetty's
+    and all of m's. Holding jetty responsible for a repository that has already
+    replaced it would report a lag that no release can ever fix; lyrical is
+    where jetty's vendor packages live now.
+
+    The same share threshold as the platform rule decides what "carries" means,
+    so a couple of majors shared with an older collection (harmonic and ionic
+    each have one library in Rolling) cannot claim it. Collections arrive oldest
+    first, so the newest qualifying one wins.
+    """
+    carried = {
+        (record.library, record.major)
+        for record in snapshot.records
+        if rosdistro_of(record.platform) in config.ROLLING_ROSDISTROS
+    }
+    for collection in reversed(snapshot.collections):
+        libraries = {(lib.name, lib.major) for lib in collection.libraries}
+        if not libraries:
+            continue
+        needed = max(1, round(len(libraries) * config.COLLECTION_PLATFORM_SHARE))
+        if len(libraries & carried) >= needed:
+            return collection.name
+    return None
+
+
 def _overlay_entries(
     records: list[PackageRecord],
     source: str,
@@ -169,10 +205,17 @@ def compute_statuses(snapshot: Snapshot) -> list[StatusEntry]:
         for r in snapshot.records
     }
     entries: list[StatusEntry] = []
+    rolling_owner = rolling_collection(snapshot)
     for collection in snapshot.collections:
         library_keys = {(lib.name, lib.major) for lib in collection.libraries}
         for source in snapshot.sources_fetched:
             combos = _observed_combos(snapshot.records, source, library_keys)
+            if collection.name != rolling_owner:
+                combos = [
+                    combo
+                    for combo in combos
+                    if rosdistro_of(combo[1]) not in config.ROLLING_ROSDISTROS
+                ]
             arch_support = architectures_built(snapshot.records, source)
             for library in collection.libraries:
                 truth = ground_truth.get((library.name, library.major))
