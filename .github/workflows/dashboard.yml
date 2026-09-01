@@ -1,0 +1,50 @@
+name: dashboard
+
+on:
+  schedule:
+    # Daily, a little after the nightly builds have settled.
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never cancel a half-finished deploy; just queue behind it.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install
+        run: uv sync
+      - name: Fetch every source
+        run: uv run gz-dashboard fetch -o snapshot.json
+      - name: Report the problems
+        # Informational only: a lagging package must never block the deploy.
+        run: uv run gz-dashboard console snapshot.json --problems-only
+      - name: Build the page
+        run: uv run gz-dashboard html snapshot.json -o public
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
