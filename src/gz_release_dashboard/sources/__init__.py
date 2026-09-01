@@ -39,3 +39,4 @@ def create_sources(names: list[str] | None, http: Http) -> list[PackageSource]:
 
 # Imported for their side effect: each module registers itself.
 from . import osrf_debian  # noqa: E402,F401
+from . import bazel_registry  # noqa: E402,F401
