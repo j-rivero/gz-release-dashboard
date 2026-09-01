@@ -10,7 +10,7 @@ from . import __version__, engine, ground_truth, snapshot as snap
 from .collections_yaml import load_collections
 from .http import HttpClient
 from .models import FetchError, Snapshot, StatusEntry
-from .render import console as console_render
+from .render import console as console_render, html as html_render
 from .sources import available_sources, create_sources
 
 
@@ -144,5 +144,43 @@ def console_cmd(snapshot_path, collections_, sources, libs, problems_only, verbo
     count = console_render.render(
         snapshot, entries, Console(), verbose=verbose, problems_only=problems_only
     )
+    if fail_on_problems and count:
+        raise SystemExit(1)
+
+
+@main.command(name="html")
+@click.argument("snapshot_path", metavar="[SNAPSHOT]", default="snapshot.json",
+                type=click.Path(exists=True, dir_okay=False))
+@add_filter_options
+@click.option("-o", "--output", "out_dir", default="public", show_default=True,
+              type=click.Path(file_okay=False),
+              help="Directory to write index.html and snapshot.json into.")
+def html_cmd(snapshot_path, collections_, sources, libs, out_dir):
+    """Render a snapshot as a static page for GitHub Pages."""
+    snapshot, entries = _filtered(snap.load(snapshot_path), collections_, sources, libs)
+    path = html_render.write(snapshot, entries, out_dir)
+    click.echo(f"wrote {path}", err=True)
+
+
+@main.command(name="all")
+@click.option("-o", "--output", "out_dir", default="public", show_default=True,
+              type=click.Path(file_okay=False), help="Directory to publish into.")
+@click.option("--source", "sources", multiple=True, type=click.Choice(available_sources()),
+              help="Fetch only these sources (repeatable).")
+@click.option("--collection", "collections_", multiple=True,
+              help="Fetch only these collections (repeatable).")
+@click.option("--cache-dir", type=click.Path(file_okay=False),
+              help="Memoise HTTP bodies here; handy while iterating.")
+@click.option("--fail-on-problems", is_flag=True,
+              help="Exit non-zero when anything is behind or missing.")
+def all_cmd(out_dir, sources, collections_, cache_dir, fail_on_problems):
+    """Fetch, report the problems on stderr, and publish the page."""
+    snapshot = _collect(sources, collections_, cache_dir)
+    entries = engine.compute_statuses(snapshot)
+    count = console_render.render(
+        snapshot, entries, Console(stderr=True), problems_only=True
+    )
+    path = html_render.write(snapshot, entries, out_dir)
+    click.echo(f"wrote {path}", err=True)
     if fail_on_problems and count:
         raise SystemExit(1)

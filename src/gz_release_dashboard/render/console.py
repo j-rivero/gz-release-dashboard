@@ -7,10 +7,11 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from ..engine import SEVERITY, problems
+from ..engine import SEVERITY
 from ..models import Snapshot, Status, StatusEntry
 from . import (
     STATUS_GLYPHS,
+    group_problems,
     STATUS_LABELS,
     STATUS_STYLES,
     aggregate_cell,
@@ -86,32 +87,32 @@ def detail_table(entries: list[StatusEntry]) -> Table:
     return table
 
 
-def _problem_line(entry: StatusEntry) -> Text:
-    where = f"{entry.platform}/{entry.arch}" if entry.arch else entry.platform
-    channel = f" {entry.channel}" if entry.channel else ""
-    text = Text(f"{STATUS_GLYPHS[entry.status]} ", style=STATUS_STYLES[entry.status])
-    text.append(f"{entry.collection}/{entry.library}{entry.major} ")
-    if entry.status is Status.BEHIND:
-        text.append(f"{entry.found_version} < {entry.expected_version} ")
+def _problem_line(problem) -> Text:
+    channel = f" {problem.channel}" if problem.channel else ""
+    text = Text(f"{problem.glyph} ", style=STATUS_STYLES[problem.status])
+    text.append(f"{problem.title} ")
+    if problem.status is Status.BEHIND:
+        text.append(f"{problem.found} < {problem.expected} ")
     else:
         text.append("missing ")
-    text.append(f"in {source_label(entry.source)}{channel} ({where})", style="dim")
+    text.append(f"in {source_label(problem.source)}{channel}", style="dim")
+    text.append(f" — {problem.where(limit=4)}", style="dim")
     return text
 
 
-def problems_panel(entries: list[StatusEntry], limit: int = 60) -> Panel:
-    found = sorted(
-        problems(entries),
-        key=lambda e: (-SEVERITY[e.status], e.collection, e.library, e.source, e.platform),
-    )
+def problems_panel(entries: list[StatusEntry], limit: int = 40) -> Panel:
+    found = group_problems(entries)
     if not found:
         return Panel(Text("✅ every source matches the latest release", style="green"),
                      title="problems", title_align="left", border_style="green")
-    body = Text("\n").join(_problem_line(e) for e in found[:limit])
+    body = Text("\n").join(_problem_line(p) for p in found[:limit])
     if len(found) > limit:
         body.append(f"\n… and {len(found) - limit} more", style="dim")
-    return Panel(body, title=f"problems ({len(found)})", title_align="left",
-                 border_style="red")
+    total = sum(len(p.places) for p in found)
+    title = f"problems ({len(found)})"
+    if total != len(found):
+        title = f"problems ({len(found)}, {total} platform cells)"
+    return Panel(body, title=title, title_align="left", border_style="red")
 
 
 def legend() -> Text:
@@ -165,4 +166,4 @@ def render(
                 border_style="yellow",
             )
         )
-    return len(problems(entries))
+    return sum(len(p.places) for p in group_problems(entries))

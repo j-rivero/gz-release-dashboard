@@ -113,7 +113,7 @@ def test_render_lists_the_problems_and_counts_them():
     count, text = render()
     assert count == 1
     assert "problems (1)" in text
-    assert "jetty/gz-math9 9.1.0 < 9.3.0 in osrf deb stable (noble/amd64)" in text
+    assert "jetty/gz-math9 9.1.0 < 9.3.0 in osrf deb stable — noble/amd64" in text
 
 
 def test_render_surfaces_fetch_errors():
@@ -142,3 +142,25 @@ def test_a_clean_snapshot_reports_no_problems():
     count = console_render.render(snapshot, engine.compute_statuses(snapshot), console)
     assert count == 0
     assert "every source matches the latest release" in console.export_text()
+
+
+def test_problems_that_differ_only_by_platform_collapse_into_one_line():
+    snapshot = build_snapshot()
+    snapshot.records = [
+        r for r in snapshot.records if (r.library, r.channel) != ("gz-math", "stable")
+    ]
+    for arch in ("amd64", "arm64", "armhf"):
+        snapshot.records.append(
+            PackageRecord("osrf_debian", "stable", "noble", arch, "gz-sim", 10,
+                          "gz-sim10", "10.5.0-1~noble", "10.5.0"))
+        snapshot.records.append(
+            PackageRecord("osrf_debian", "stable", "noble", arch, "gz-math", 9,
+                          "gz-math9", "9.1.0-1~noble", "9.1.0"))
+    entries = engine.compute_statuses(snapshot)
+    console = Console(record=True, width=200)
+    count = console_render.render(snapshot, entries, console)
+    text = console.export_text()
+    # One finding, three platform cells.
+    assert count == 3
+    assert "problems (1, 3 platform cells)" in text
+    assert "noble/amd64, noble/arm64, noble/armhf" in text

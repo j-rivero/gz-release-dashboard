@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gazebo release dashboard</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #fbfbfd; --fg: #1c1c22; --muted: #6a6a78; --line: #dcdce4;
+  --panel: #ffffff; --head: #f2f2f7;
+  --ok: #147a3d; --behind: #9a6400; --missing: #b3261e; --ahead: #0b6b93;
+  --pre: #6b3fa0; --none: #9a9aa8;
+  --ok-bg: #e8f6ed; --behind-bg: #fdf3e0; --missing-bg: #fdeceb;
+  --ahead-bg: #e6f3f9; --pre-bg: #f1ebf9; --none-bg: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16161a; --fg: #e8e8ee; --muted: #9a9aa8; --line: #303038;
+    --panel: #1e1e24; --head: #26262e;
+    --ok: #5cd08a; --behind: #e8b45c; --missing: #ff8a80; --ahead: #6fc9ea;
+    --pre: #c6a6ef; --none: #7a7a88;
+    --ok-bg: #16301f; --behind-bg: #33270f; --missing-bg: #3a1c1a;
+    --ahead-bg: #122c38; --pre-bg: #271c38; --none-bg: transparent;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 2rem 1.25rem 4rem; background: var(--bg); color: var(--fg);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+main { max-width: 1400px; margin: 0 auto; }
+h1 { font-size: 1.6rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
+h2 { font-size: 1.15rem; margin: 0; }
+a { color: inherit; }
+.sub { color: var(--muted); margin: 0 0 1.5rem; font-size: .9rem; }
+.sub code { font-size: .85rem; }
+.legend { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1.5rem; padding: 0; list-style: none; }
+.legend li {
+  border: 1px solid var(--line); border-radius: 999px; padding: .15rem .7rem;
+  font-size: .82rem; background: var(--panel);
+}
+nav { margin: 0 0 2rem; font-size: .9rem; }
+nav a {
+  display: inline-block; margin-right: .6rem; padding: .2rem .7rem;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
+  text-decoration: none;
+}
+nav a:hover { border-color: var(--fg); }
+section { margin: 0 0 2.5rem; scroll-margin-top: 1rem; }
+.section-head { display: flex; align-items: baseline; gap: .6rem; margin: 0 0 .6rem; }
+.tag {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); border: 1px solid var(--line); border-radius: 999px;
+  padding: .1rem .55rem;
+}
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; padding: .45rem .7rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+thead th { background: var(--head); position: sticky; top: 0; white-space: nowrap; }
+thead th .chan { display: block; font-weight: 400; color: var(--muted); font-size: .78rem; }
+tbody tr:last-child td { border-bottom: 0; }
+th.lib, td.lib { white-space: nowrap; font-weight: 600; }
+td.lib .major { color: var(--muted); font-weight: 400; }
+td .empty { color: var(--none); }
+.v { font-variant-numeric: tabular-nums; }
+.want { color: var(--muted); font-size: .8rem; display: block; }
+.count { color: var(--muted); font-size: .78rem; }
+.ok { color: var(--ok); } .behind { color: var(--behind); } .missing { color: var(--missing); }
+.ahead { color: var(--ahead); } .pre { color: var(--pre); } .none { color: var(--none); }
+td.cell-ok { background: var(--ok-bg); } td.cell-behind { background: var(--behind-bg); }
+td.cell-missing { background: var(--missing-bg); } td.cell-ahead { background: var(--ahead-bg); }
+td.cell-pre { background: var(--pre-bg); } td.cell-none { background: var(--none-bg); }
+details summary { cursor: pointer; list-style: none; }
+details summary::-webkit-details-marker { display: none; }
+/* The caret is its own inline span: appended to the summary it would be
+   pushed onto a line of its own by the block-level "expected" note. */
+.caret::after { content: " ▸"; color: var(--muted); font-size: .75rem; }
+details[open] .caret::after { content: " ▾"; }
+details .platforms { margin: .4rem 0 .1rem; font-size: .78rem; border-top: 1px solid var(--line); }
+details .platforms div { display: flex; gap: .4rem; padding: .12rem 0; white-space: nowrap; }
+details .platforms .p { color: var(--muted); min-width: 9.5em; }
+.panel { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: .3rem 1rem; }
+.panel.bad { border-color: var(--missing); }
+.panel ul { margin: .6rem 0; padding-left: 1.1rem; }
+.panel li { margin: .2rem 0; }
+footer { color: var(--muted); font-size: .85rem; margin-top: 2.5rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+</style>
+</head>
+<body>
+<main>
+<h1>Gazebo release dashboard</h1>
+<p class="sub">
+  Every Gazebo library, in every packaging system, against the latest release tag on GitHub.
+  Snapshot taken <strong>{{ generated_at }}</strong> by gz-dashboard {{ tool_version }}.
+</p>
+
+<ul class="legend">
+  {% for item in legend %}
+  <li><span class="{{ item.css }}">{{ item.glyph }}</span> {{ item.label }}</li>
+  {% endfor %}
+</ul>
+
+<nav>
+  {% for collection in collections %}
+  <a href="#{{ collection.name }}">{{ collection.name }}</a>
+  {% endfor %}
+  <a href="#problems">problems ({{ problems | length }})</a>
+</nav>
+
+{% for collection in collections %}
+<section id="{{ collection.name }}">
+  <div class="section-head">
+    <h2>{{ collection.name }}</h2>
+    {% if collection.in_development %}<span class="tag">in development</span>{% endif %}
+  </div>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th class="lib">library</th>
+          {% for column in columns %}
+          <th>{{ column.source }}<span class="chan">{{ column.channel }}</span></th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in collection.rows %}
+        <tr>
+          <td class="lib">{{ row.library }} <span class="major">{{ row.major }}</span></td>
+          {% for cell in row.cells %}
+          {% if cell is none %}
+          <td><span class="empty">·</span></td>
+          {% else %}
+          <td class="cell-{{ cell.css }}">
+            {% if cell.details %}
+            <details>
+              <summary>
+                <span class="{{ cell.css }}">{{ cell.glyph }}</span>
+                <span class="v">{{ cell.version or cell.label }}</span>
+                {% if cell.mixed %}<span class="count">({{ cell.worst_count }}/{{ cell.total }})</span>{% endif %}
+                <span class="caret"></span>
+                {% if cell.expected %}<span class="want">&rarr; {{ cell.expected }}</span>{% endif %}
+              </summary>
+              <div class="platforms">
+                {% for detail in cell.details %}
+                <div>
+                  <span class="{{ detail.css }}" title="{{ detail.label }}">{{ detail.glyph }}</span>
+                  <span class="p">{{ detail.platform }}/{{ detail.arch }}</span>
+                  <span class="v">{{ detail.found or detail.label }}</span>
+                </div>
+                {% endfor %}
+              </div>
+            </details>
+            {% else %}
+            <span class="{{ cell.css }}">{{ cell.glyph }}</span>
+            <span class="v">{{ cell.version or cell.label }}</span>
+            {% if cell.expected %}<span class="want">&rarr; {{ cell.expected }}</span>{% endif %}
+            {% endif %}
+          </td>
+          {% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endfor %}
+
+<section id="problems">
+  <div class="section-head">
+    <h2>problems</h2>
+    <span class="tag">{{ problems | length }}</span>
+    {% if problem_cells != problems | length %}
+    <span class="tag">{{ problem_cells }} platform cells</span>
+    {% endif %}
+  </div>
+  <div class="panel{% if problems %} bad{% endif %}">
+    {% if problems %}
+    <ul>
+      {% for problem in problems %}
+      <li>
+        <span class="{{ problem.css }}">{{ problem.glyph }}</span>
+        <strong>{{ problem.title }}</strong>
+        {% if problem.found %}<span class="v">{{ problem.found }} &lt; {{ problem.expected }}</span>{% else %}missing{% endif %}
+        in {{ problem.source }}{% if problem.channel %} {{ problem.channel }}{% endif %}
+        <span class="count">&mdash; {{ problem.places | join(", ") }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="ok">✅ every source matches the latest release.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% if errors %}
+<section id="errors">
+  <div class="section-head"><h2>fetch errors</h2><span class="tag">{{ errors | length }}</span></div>
+  <div class="panel bad">
+    <ul>
+      {% for error in errors %}
+      <li><strong>{{ error.source }}</strong>: {{ error.message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+<footer>
+  Raw data: <a href="snapshot.json">snapshot.json</a> &middot;
+  Ground truth: <a href="https://github.com/gazebosim">GitHub release tags</a> and
+  <a href="https://github.com/gazebo-tooling/release-tools/blob/master/jenkins-scripts/dsl/gz-collections.yaml">gz-collections.yaml</a> &middot;
+  Built by <a href="https://github.com/j-rivero/gz-release-dashboard">gz-release-dashboard</a>.
+</footer>
+</main>
+</body>
+</html>

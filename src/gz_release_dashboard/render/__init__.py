@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..engine import SEVERITY
+from ..engine import SEVERITY, problems
 from ..models import Status, StatusEntry
 from ..versions import GzVersion, max_version
 from ..sources import available_sources, source_class
@@ -131,3 +131,66 @@ def group_cells(entries: list[StatusEntry]) -> dict[tuple, list[StatusEntry]]:
         key = (entry.collection, entry.library, entry.major, entry.source, entry.channel)
         grouped.setdefault(key, []).append(entry)
     return grouped
+
+
+STATUS_CSS: dict[Status, str] = {
+    Status.UP_TO_DATE: "ok",
+    Status.BEHIND: "behind",
+    Status.MISSING: "missing",
+    Status.AHEAD: "ahead",
+    Status.PRERELEASE: "pre",
+    Status.NOT_EXPECTED: "none",
+}
+
+
+@dataclass
+class Problem:
+    """One finding, with every platform it affects collapsed into one line."""
+
+    collection: str
+    library: str
+    major: int
+    source: str
+    channel: str
+    status: Status
+    found: str | None
+    expected: str | None
+    places: list[str]
+
+    @property
+    def title(self) -> str:
+        return f"{self.collection}/{self.library}{self.major}"
+
+    @property
+    def glyph(self) -> str:
+        return STATUS_GLYPHS[self.status]
+
+    def where(self, limit: int | None = None) -> str:
+        """The affected platforms, optionally trimmed to keep a line readable."""
+        if limit is None or len(self.places) <= limit:
+            return ", ".join(self.places)
+        rest = len(self.places) - limit
+        return ", ".join(self.places[:limit]) + f", +{rest} more"
+
+
+def group_problems(entries: list[StatusEntry]) -> list[Problem]:
+    """Collapse the problems that differ only by platform.
+
+    conda-forge lagging on one library is one fact, not six; repeating it per
+    subdirectory buries the findings that affect a single platform.
+    """
+    grouped: dict[tuple, Problem] = {}
+    for entry in problems(entries):
+        key = (
+            entry.collection, entry.library, entry.major, entry.source,
+            entry.channel, entry.status, entry.found_version, entry.expected_version,
+        )
+        place = f"{entry.platform}/{entry.arch}" if entry.arch else entry.platform
+        if key in grouped:
+            grouped[key].places.append(place)
+        else:
+            grouped[key] = Problem(*key, places=[place])
+    return sorted(
+        grouped.values(),
+        key=lambda p: (-SEVERITY[p.status], p.collection, p.library, p.major, p.source),
+    )
