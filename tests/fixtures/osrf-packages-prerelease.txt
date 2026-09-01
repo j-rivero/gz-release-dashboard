@@ -1,0 +1,13 @@
+Package: libgz-sim10-dev
+Source: gz-sim10
+Version: 10.0.0~pre1-1~noble
+Architecture: amd64
+Section: libdevel
+Description: a release candidate staged for promotion
+
+Package: libgz-math9
+Source: gz-math9
+Version: 9.3.0-1~noble
+Architecture: amd64
+Section: libs
+Description: Gazebo Math - Shared library

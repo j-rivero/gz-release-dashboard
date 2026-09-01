@@ -51,9 +51,16 @@ ROS_DEB_DISTROS = ("noble", "resolute")
 ROS_DEB_ARCHES = ("amd64", "arm64")
 
 # --- status policy --------------------------------------------------------
-#: Channels allowed to carry a prerelease newer than the latest stable tag.
+#: Staging channels: they may carry a prerelease newer than the latest stable
+#: tag, and whatever they are missing or holding stale is never a problem --
+#: they contain only what happens to be queued at this instant.
 PRERELEASE_CHANNELS = frozenset({"prerelease", "ros2-testing"})
 #: Libraries a source is known never to ship: absence is `—`, not `missing`.
 EXPECTED_ABSENT: dict[str, frozenset[str]] = {
     "bazel_registry": frozenset({"gz-cmake", "gz-tools", "gz-gui", "gz-launch"}),
 }
+
+#: Fraction of a collection's libraries a platform must carry before the
+#: dashboard holds that platform responsible for the rest. Majors are shared
+#: between collections, so a single leaked package must not count as coverage.
+COLLECTION_PLATFORM_SHARE = 0.5

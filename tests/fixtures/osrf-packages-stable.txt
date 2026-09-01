@@ -1,0 +1,76 @@
+Package: libgz-sim10-dev
+Source: gz-sim10
+Version: 10.5.0-2~noble
+Architecture: amd64
+Section: libdevel
+Description: Gazebo Sim classes and functions for robot apps - Development files
+ Gazebo Sim is a component in the Gazebo framework, a set of libraries
+ designed to rapidly develop robot applications.
+
+Package: libgz-sim10
+Source: gz-sim10 (10.5.0-2~noble)
+Version: 10.5.0-2~noble
+Architecture: amd64
+Section: libs
+Description: Gazebo Sim - Shared library
+
+Package: libgz-sim10-dbgsym
+Source: gz-sim10
+Version: 10.5.0-2~noble
+Architecture: amd64
+Section: debug
+Description: debug symbols for libgz-sim10
+
+Package: gz-jetty-sim
+Source: gz-sim10
+Version: 10.5.0-2~noble
+Architecture: all
+Section: metapackages
+Description: alias package
+
+Package: libgz-gui10
+Source: gz-gui10
+Version: 10.1.1-1.995~noble
+Architecture: amd64
+Section: libs
+Description: Gazebo GUI - Shared library
+
+Package: libsdformat16
+Source: sdformat16
+Version: 16.1.0-1~noble
+Architecture: amd64
+Section: libs
+Description: SDFormat - Shared library
+
+Package: ignition-tools
+Version: 1.5.0-1~noble
+Architecture: amd64
+Section: science
+Description: Ignition tools, no major version suffix anywhere
+
+Package: libgz-math9
+Source: gz-math9
+Version: 9.2.0-1~noble
+Architecture: amd64
+Section: libs
+Description: an older build that must lose to the newer stanza below
+
+Package: libgz-math9-eigen3
+Source: gz-math9
+Version: 9.3.0-1~noble
+Architecture: amd64
+Section: libs
+Description: Gazebo Math with Eigen3 - Shared library
+
+Package: libdart6.13
+Source: dart6.13
+Version: 6.13.2-1~noble
+Architecture: amd64
+Section: libs
+Description: DART, not a Gazebo library at all
+
+Package: gz-jetty
+Version: 1.0.0-2~noble
+Architecture: amd64
+Section: libdevel
+Description: Gazebo Jetty metapackage

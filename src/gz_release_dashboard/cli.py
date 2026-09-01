@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import click
 
-from . import __version__, config, ground_truth, snapshot as snap
+from rich.console import Console
+
+from . import __version__, engine, ground_truth, snapshot as snap
 from .collections_yaml import load_collections
 from .http import HttpClient
-from .models import FetchError
+from .models import FetchError, Snapshot, StatusEntry
+from .render import console as console_render
 from .sources import available_sources, create_sources
 
 
@@ -86,3 +89,60 @@ def fetch(output, sources, collections_, cache_dir):
 
 if __name__ == "__main__":  # pragma: no cover
     main()
+
+
+def _filtered(
+    snapshot: Snapshot,
+    collections_: tuple[str, ...],
+    sources: tuple[str, ...],
+    libs: tuple[str, ...],
+) -> tuple[Snapshot, list[StatusEntry]]:
+    """Narrow a loaded snapshot, then compute the statuses of what is left."""
+    if collections_:
+        wanted = set(collections_)
+        snapshot.collections = [c for c in snapshot.collections if c.name in wanted]
+    if sources:
+        keep = set(sources)
+        snapshot.sources_fetched = [s for s in snapshot.sources_fetched if s in keep]
+        snapshot.records = [r for r in snapshot.records if r.source in keep]
+    if libs:
+        names = set(libs)
+        for collection in snapshot.collections:
+            collection.libraries = [l for l in collection.libraries if l.name in names]
+    return snapshot, engine.compute_statuses(snapshot)
+
+
+_filter_options = [
+    click.option("--collection", "collections_", multiple=True,
+                 help="Show only these collections (repeatable)."),
+    click.option("--source", "sources", multiple=True,
+                 type=click.Choice(available_sources()),
+                 help="Show only these sources (repeatable)."),
+    click.option("--lib", "libs", multiple=True,
+                 help="Show only these libraries (repeatable)."),
+]
+
+
+def add_filter_options(command):
+    for option in reversed(_filter_options):
+        command = option(command)
+    return command
+
+
+@main.command(name="console")
+@click.argument("snapshot_path", metavar="[SNAPSHOT]", default="snapshot.json",
+                type=click.Path(exists=True, dir_okay=False))
+@add_filter_options
+@click.option("--problems-only", is_flag=True, help="Print only the problems panel.")
+@click.option("--verbose", is_flag=True, help="Add a per-platform detail table.")
+@click.option("--fail-on-problems", is_flag=True,
+              help="Exit non-zero when anything is behind or missing.")
+def console_cmd(snapshot_path, collections_, sources, libs, problems_only, verbose,
+                fail_on_problems):
+    """Render a snapshot as a colourful terminal dashboard."""
+    snapshot, entries = _filtered(snap.load(snapshot_path), collections_, sources, libs)
+    count = console_render.render(
+        snapshot, entries, Console(), verbose=verbose, problems_only=problems_only
+    )
+    if fail_on_problems and count:
+        raise SystemExit(1)
