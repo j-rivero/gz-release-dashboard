@@ -8,7 +8,7 @@ and the in-development `m`) against five sources:
 
 | column | source |
 | --- | --- |
-| `osrf deb` stable / prerelease | [packages.osrfoundation.org](http://packages.osrfoundation.org/gazebo), across every live Ubuntu release × amd64/arm64/armhf/i386 |
+| `osrf deb` stable / prerelease | [packages.osrfoundation.org](http://packages.osrfoundation.org/gazebo), every live Ubuntu release × amd64/arm64, plus armhf on jammy and noble |
 | `bazel` | the [Bazel Central Registry](https://bcr.bazel.build) |
 | `conda` | [conda-forge](https://conda-forge.org), per subdir |
 | `brew` | the [osrf/simulation](https://github.com/osrf/homebrew-simulation) tap, per bottle |
@@ -74,15 +74,22 @@ one missing architecture cannot hide behind eleven green ones, and `(2/6)` says
 how many platforms are affected. The web page expands the same cell into its
 per-platform detail.
 
-Five rules keep the noise down, all of them learned from the live data:
+Six rules keep the noise down, all of them learned from the live data:
 
 - **A platform must carry a real share of a collection** before it is held
   responsible for the rest. Majors are shared between collections (gz-tools 2
   belongs to harmonic, ionic and jetty alike), so a single leaked package must
   not drag a whole collection onto a distro it was never built for.
+- **Only architectures Gazebo actually publishes are queried.** i386 is not one:
+  Gazebo does not support it, and the packages still in the index are leftovers.
+  armhf stops after noble, so resolute is never asked for it — a leftover found
+  there would read as evidence the architecture is built, which is what turns a
+  deliberate drop into a reported gap. This is the one list that cannot be
+  derived from `gz-collections.yaml`, whose `packaging_configs` name only the
+  architecture the release job builds *on*.
 - **A library is only expected on an architecture the source builds it for.**
   gz-sim, gz-gui, gz-rendering, gz-launch and gz-sensors are absent from every
-  armhf and i386 build by policy, not by oversight.
+  armhf build by policy, not by oversight.
 - **The osrf `prerelease` repository is an overlay on `stable`, not a repository
   of its own.** Both are enabled together and apt installs whichever version is
   higher, so an entry counts only while it is ahead of the highest stable version

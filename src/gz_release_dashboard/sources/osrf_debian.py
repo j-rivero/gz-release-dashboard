@@ -27,7 +27,7 @@ class OsrfDebianSource(PackageSource):
         for channel in self.channels:
             repository = config.OSRF_DEB_CHANNELS[channel]
             for distro in distros:
-                for arch in config.OSRF_DEB_ARCHES:
+                for arch in config.deb_arches(distro):
                     url = packages_url(config.OSRF_DEB_BASE, repository, distro, arch)
                     text = self.http.get_gzip_text(url, ok_404=True)
                     if not text:

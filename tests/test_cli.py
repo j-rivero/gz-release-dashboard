@@ -142,6 +142,49 @@ def test_console_filters(runner, snapshot_file):
     assert "fortress" not in result.output
 
 
+def test_a_narrowed_view_scores_the_same_as_the_whole_dashboard(runner, tmp_path):
+    """`--collection` must not change any verdict, only which ones are shown.
+
+    Rolling belongs to the newest collection, so scoring a snapshot narrowed to
+    jetty would make jetty the newest one there is and hand it Rolling -- a
+    view that quietly disagreed with the dashboard it was cut from.
+    """
+    from gz_release_dashboard import engine
+    from gz_release_dashboard.models import Collection, GroundTruthEntry, Library, PackageRecord
+
+    def vendor(library, major, version, rosdistro):
+        return PackageRecord(
+            source="ros_vendor", channel="ros2", platform=f"{rosdistro}@noble",
+            arch="amd64", library=library, major=major, pkg_name=f"{library}{major}",
+            raw_version=version, upstream_version=version,
+        )
+
+    s = snap.new_snapshot(["ros_vendor"])
+    s.collections = [
+        Collection("jetty", False, [Library("gz-sim", 10), Library("gz-math", 9)]),
+        Collection("m", True, [Library("gz-sim", 11), Library("gz-math", 10)]),
+    ]
+    s.ground_truth = [
+        GroundTruthEntry("gz-sim", 10, "10.5.0", None),
+        GroundTruthEntry("gz-math", 9, "9.3.0", None),
+        GroundTruthEntry("gz-sim", 11, None, "11.0.0-pre1"),
+        GroundTruthEntry("gz-math", 10, None, "10.0.0-pre1"),
+    ]
+    s.records = [
+        vendor("gz-sim", 10, "10.1.1", "rolling"),   # jetty's, left behind
+        vendor("gz-math", 9, "9.1.0", "rolling"),
+        vendor("gz-sim", 11, "11.0.0-pre1", "rolling"),
+        vendor("gz-math", 10, "10.0.0-pre1", "rolling"),
+    ]
+    path = tmp_path / "snapshot.json"
+    path.write_text(json.dumps(snap.to_dict(s)))
+
+    whole = [e for e in engine.compute_statuses(snap.load(path)) if e.collection == "jetty"]
+    _, narrowed = cli._filtered(snap.load(path), ("jetty",), (), ())
+    assert narrowed == whole
+    assert not any(e.platform.startswith("rolling") for e in narrowed)
+
+
 def test_console_problems_only(runner, snapshot_file):
     result = runner.invoke(cli.main, ["console", str(snapshot_file), "--problems-only"])
     assert result.exit_code == 0, result.output

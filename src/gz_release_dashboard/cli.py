@@ -97,19 +97,34 @@ def _filtered(
     sources: tuple[str, ...],
     libs: tuple[str, ...],
 ) -> tuple[Snapshot, list[StatusEntry]]:
-    """Narrow a loaded snapshot, then compute the statuses of what is left."""
+    """Compute the statuses of the whole snapshot, then narrow what is shown.
+
+    The narrowing has to come after the scoring, never before it. Several rules
+    weigh a collection against the others -- which collection owns ROS Rolling,
+    what share of a collection a platform has to carry -- so scoring a narrowed
+    snapshot answers a different question: ``--collection jetty`` would make
+    jetty the newest collection in existence and hand it Rolling, and the same
+    view would disagree with the full dashboard about it.
+
+    The snapshot is still narrowed afterwards, because the renderers take the
+    collection order and the column list from it.
+    """
+    entries = engine.compute_statuses(snapshot)
     if collections_:
         wanted = set(collections_)
         snapshot.collections = [c for c in snapshot.collections if c.name in wanted]
+        entries = [e for e in entries if e.collection in wanted]
     if sources:
         keep = set(sources)
         snapshot.sources_fetched = [s for s in snapshot.sources_fetched if s in keep]
         snapshot.records = [r for r in snapshot.records if r.source in keep]
+        entries = [e for e in entries if e.source in keep]
     if libs:
         names = set(libs)
         for collection in snapshot.collections:
             collection.libraries = [l for l in collection.libraries if l.name in names]
-    return snapshot, engine.compute_statuses(snapshot)
+        entries = [e for e in entries if e.library in names]
+    return snapshot, entries
 
 
 _filter_options = [
