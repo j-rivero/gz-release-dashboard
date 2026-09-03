@@ -59,8 +59,55 @@ def test_split_binary_packages_collapse_to_one_record_per_library(records):
     assert sim[0].pkg_name == "gz-sim10"
 
 
-def test_the_newest_version_wins(records):
-    # gz-math9 appears at 9.2.0 and 9.3.0 in the same index.
+def test_binaries_of_one_source_that_disagree_report_the_lowest(records):
+    """An architecture is only as released as its most stale binary.
+
+    gz-math9 ships libgz-math9 at 9.2.0 and libgz-math9-eigen3 at 9.3.0. The
+    source did not land here whole, and calling it 9.3.0 reports the half that
+    arrived while hiding the half that did not.
+    """
+    assert by_library(records)["gz-math"].upstream_version == "9.2.0"
+
+
+def test_an_architecture_all_package_cannot_hide_a_stale_arch_build(jetty):
+    """The case this rule exists for.
+
+    A repository copies every ``Architecture: all`` binary into all of its
+    per-architecture indexes, so the doc and sdf packages an amd64 builder
+    produced sit in binary-arm64 at the new version beside the arm64 libraries
+    that were never rebuilt. Ranking by the newest stanza reads the amd64 build
+    back as arm64 coverage: the real sdformat 15 arm64 libraries stood three
+    releases behind for seven months under a green cell.
+    """
+    http = FakeHttpClient()
+    http.add_gzip(
+        url("stable", "noble", "arm64"),
+        "Package: libsdformat16\nSource: sdformat16\n"
+        "Version: 16.1.0-1~noble\nArchitecture: arm64\nSection: libs\n\n"
+        "Package: sdformat16-doc\nSource: sdformat16\n"
+        "Version: 16.2.0-1~noble\nArchitecture: all\nSection: doc\n",
+    )
+    records = OsrfDebianSource(http).fetch(jetty)
+    assert by_library(records)["sdformat"].upstream_version == "16.1.0"
+
+
+def test_a_binary_republished_at_two_versions_counts_as_its_newest(jetty):
+    """Lowest across binaries, newest within one of them.
+
+    An index may still carry an earlier stanza of a package it has since
+    republished; apt installs the higher one, so that is the version the
+    package is at. Only genuinely different binaries disagreeing means the
+    source landed in pieces.
+    """
+    http = FakeHttpClient()
+    http.add_gzip(
+        url("stable", "noble", "amd64"),
+        "Package: libgz-math9\nSource: gz-math9\n"
+        "Version: 9.2.0-1~noble\nArchitecture: amd64\nSection: libs\n\n"
+        "Package: libgz-math9\nSource: gz-math9\n"
+        "Version: 9.3.0-1~noble\nArchitecture: amd64\nSection: libs\n",
+    )
+    records = OsrfDebianSource(http).fetch(jetty)
     assert by_library(records)["gz-math"].upstream_version == "9.3.0"
 
 

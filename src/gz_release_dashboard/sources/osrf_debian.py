@@ -13,7 +13,13 @@ from .debian_repo import packages_url, parse_stanzas, source_name, split_source_
 
 @register_source
 class OsrfDebianSource(PackageSource):
-    """One record per (channel, distro, arch, library): the newest version there."""
+    """One record per (channel, distro, arch, library): the oldest version there.
+
+    A source package builds all of its binaries from one upload, so wherever a
+    release landed whole they carry the same version. Where they disagree the
+    release landed in pieces, and the oldest piece is what that architecture
+    actually offers.
+    """
 
     name = "osrf_debian"
     channels = ("stable", "prerelease")
@@ -23,7 +29,7 @@ class OsrfDebianSource(PackageSource):
         # The union across collections, never per collection: upstream
         # under-declares (jetty lists only noble but ships on resolute too).
         distros = linux_distros(collections) or config.OSRF_DEB_DISTROS
-        best: dict[tuple, PackageRecord] = {}
+        binaries: dict[tuple, PackageRecord] = {}
         for channel in self.channels:
             repository = config.OSRF_DEB_CHANNELS[channel]
             for distro in distros:
@@ -39,8 +45,8 @@ class OsrfDebianSource(PackageSource):
                         # metapackage, EOL majors).
                         if record is None or (record.library, record.major) not in known:
                             continue
-                        self._keep_newest(best, record)
-        return self._live_records(best)
+                        self._keep_newest(binaries, stanza.get("Package", ""), record)
+        return self._live_records(self._lowest_per_library(binaries))
 
     def _record(
         self, stanza: dict[str, str], channel: str, distro: str, arch: str
@@ -113,10 +119,52 @@ class OsrfDebianSource(PackageSource):
         return records
 
     @staticmethod
-    def _keep_newest(best: dict[tuple, PackageRecord], record: PackageRecord) -> None:
-        key = (record.channel, record.platform, record.arch, record.library, record.major)
-        previous = best.get(key)
+    def _keep_newest(
+        binaries: dict[tuple, PackageRecord], package: str, record: PackageRecord
+    ) -> None:
+        """The newest stanza of one binary package: the version apt would install.
+
+        An index may still carry an earlier stanza of a package it has since
+        republished. That is history within one binary, not a source that
+        landed in pieces, so it is resolved here and never reaches the
+        comparison between binaries.
+        """
+        key = (
+            record.channel,
+            record.platform,
+            record.arch,
+            record.library,
+            record.major,
+            package,
+        )
+        previous = binaries.get(key)
         if previous is None or GzVersion.parse(record.upstream_version) > GzVersion.parse(
             previous.upstream_version
         ):
-            best[key] = record
+            binaries[key] = record
+
+    @staticmethod
+    def _lowest_per_library(
+        binaries: dict[tuple, PackageRecord],
+    ) -> dict[tuple, PackageRecord]:
+        """Collapse a source's binaries into the oldest version among them.
+
+        ``Architecture: all`` binaries are why this matters, and they are
+        deliberately kept rather than skipped. A repository replicates them
+        into every per-architecture index, so the doc and transitional packages
+        an amd64 builder produced sit in binary-arm64 at the current version
+        beside arm64 libraries that were never rebuilt. Ranking by the newest
+        stanza lets that amd64 build speak for the architecture it was copied
+        into: sdformat 15 arm64 stood three releases behind for seven months
+        while the cell read 15.4.0. Taking the oldest instead means a cell is
+        green only when every binary of the source really arrived.
+        """
+        best: dict[tuple, PackageRecord] = {}
+        for key, record in binaries.items():
+            library = key[:5]
+            previous = best.get(library)
+            if previous is None or GzVersion.parse(record.upstream_version) < GzVersion.parse(
+                previous.upstream_version
+            ):
+                best[library] = record
+        return best

@@ -53,7 +53,7 @@ Source: gz-math9
 Version: 9.2.0-1~noble
 Architecture: amd64
 Section: libs
-Description: an older build that must lose to the newer stanza below
+Description: the binary this source left behind, and the version it reports
 
 Package: libgz-math9-eigen3
 Source: gz-math9
