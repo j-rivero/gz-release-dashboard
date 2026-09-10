@@ -30,29 +30,12 @@ OSRF_DEB_CHANNELS = {"stable": "ubuntu-stable", "prerelease": "ubuntu-prerelease
 #: in gz-collections.yaml, which is what keeps end-of-life releases such as
 #: focal off the dashboard without anyone maintaining a list here.
 OSRF_DEB_DISTROS = ("jammy", "noble", "resolute")
-#: i386 is deliberately absent: Gazebo does not support it, and the handful
-#: of packages still in the repository are leftovers from when the index was
-#: built for it.
-OSRF_DEB_ARCHES = ("amd64", "arm64", "armhf")
-#: Architectures published only on some Ubuntu releases. armhf stops after
-#: noble, so asking resolute for it is 404 noise, and any package still sitting
-#: there would be read as evidence the architecture is built -- which is what
-#: turns a deliberate drop into a reported gap. An architecture absent from this
-#: table is queried everywhere.
-#:
-#: This one cannot be derived the way the distro list is: the packaging_configs
-#: in gz-collections.yaml declare only amd64, the architecture the release job
-#: builds on, not the set the repository ends up publishing.
-OSRF_DEB_ARCH_DISTROS: dict[str, tuple[str, ...]] = {"armhf": ("jammy", "noble")}
-
-
-def deb_arches(distro: str) -> tuple[str, ...]:
-    """The architectures worth querying for ``distro``."""
-    return tuple(
-        arch
-        for arch in OSRF_DEB_ARCHES
-        if distro in OSRF_DEB_ARCH_DISTROS.get(arch, (distro,))
-    )
+#: amd64 and arm64 are the whole of it. i386 is not supported by Gazebo, and
+#: armhf production is being retired, so both are left unqueried: the packages
+#: still sitting in the index for them are leftovers, and reading one as
+#: evidence that an architecture is built is what turns a deliberate drop into
+#: a reported gap.
+OSRF_DEB_ARCHES = ("amd64", "arm64")
 
 
 # --- conda-forge ----------------------------------------------------------

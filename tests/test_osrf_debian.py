@@ -213,31 +213,26 @@ def test_the_configured_matrix_is_only_a_fallback(jetty):
     assert queried == set(config.OSRF_DEB_DISTROS)
 
 
-def test_i386_is_never_queried(jetty):
-    """Gazebo does not support i386; what is left in the index is a leftover."""
-    http = FakeHttpClient()
-    OsrfDebianSource(http).fetch(jetty)
-    assert not [u for u in http.requested if "binary-i386" in u]
+def test_only_amd64_and_arm64_are_queried(jetty):
+    """i386 is unsupported and armhf production is being retired.
 
-
-def test_armhf_is_queried_only_where_it_is_published(jetty):
-    """armhf stops after noble. Asking resolute for it is 404 noise, and a
-    leftover package found there would read as evidence the architecture is
-    built -- which is exactly what turns a deliberate drop into a reported gap.
+    What is left in the index for either is a leftover, and a leftover read as
+    evidence that an architecture is built is what turns a deliberate drop into
+    a reported gap.
     """
     http = FakeHttpClient()
     OsrfDebianSource(http).fetch(jetty)
-    armhf = {u.split("/dists/")[1].split("/")[0] for u in http.requested
-             if "binary-armhf" in u}
-    assert armhf == {"jammy", "noble"}
-    amd64 = {u.split("/dists/")[1].split("/")[0] for u in http.requested
-             if "binary-amd64" in u}
-    assert "resolute" in amd64
+    queried = {u.split("/binary-")[1].split("/")[0] for u in http.requested}
+    assert queried == {"amd64", "arm64"}
 
 
-def test_deb_arches_leaves_unlisted_architectures_everywhere():
-    assert config.deb_arches("jammy") == ("amd64", "arm64", "armhf")
-    assert config.deb_arches("noble") == ("amd64", "arm64", "armhf")
-    assert config.deb_arches("resolute") == ("amd64", "arm64")
-    # A release nobody has heard of yet still gets the unrestricted set.
-    assert config.deb_arches("swift") == ("amd64", "arm64")
+def test_every_distro_is_queried_for_every_architecture(jetty):
+    """No architecture is scoped to a subset of releases any more, so the
+    distro list stays free to follow gz-collections.yaml on its own.
+    """
+    http = FakeHttpClient()
+    OsrfDebianSource(http).fetch(jetty)
+    seen = {(u.split("/dists/")[1].split("/")[0], u.split("/binary-")[1].split("/")[0])
+            for u in http.requested}
+    distros = {distro for distro, _ in seen}
+    assert seen == {(d, a) for d in distros for a in ("amd64", "arm64")}
