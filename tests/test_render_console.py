@@ -188,3 +188,14 @@ def test_problems_that_differ_only_by_platform_collapse_into_one_line():
     assert count == 3
     assert "problems (1, 3 platform cells)" in text
     assert "noble/amd64, noble/arm64, noble/armhf" in text
+
+
+def test_a_collection_older_than_a_source_does_not_get_its_column():
+    """The Bazel registry's oldest modules are ionic's majors.
+
+    harmonic predates them, so the column was dots all the way down; ionic and
+    everything after it keeps it.
+    """
+    fetched = ["osrf_debian", "bazel_registry"]
+    assert ("bazel_registry", "") not in column_order(fetched, "harmonic")
+    assert ("bazel_registry", "") in column_order(fetched, "ionic")

@@ -120,9 +120,12 @@ EXPECTED_ABSENT: dict[str, frozenset[str]] = {
 #: that grew up around Gazebo later -- there is no Bazel module, no
 #: conda-forge build and no ROS vendor package for the ignition generation --
 #: so those three columns can only ever be empty for it, and an empty column
-#: reads as a gap rather than as ground that was never claimed.
+#: reads as a gap rather than as ground that was never claimed. The Bazel
+#: Central Registry starts one generation later still: its oldest modules are
+#: ionic's majors, and harmonic never had any.
 COLLECTION_SOURCES_EXCLUDED: dict[str, frozenset[str]] = {
     "fortress": frozenset({"bazel_registry", "conda_forge", "ros_vendor"}),
+    "harmonic": frozenset({"bazel_registry"}),
 }
 #: The reverse, as ``{source: {collections}}``: a source that applies to those
 #: collections and to no other. The ROS repositories mirror the gz packages

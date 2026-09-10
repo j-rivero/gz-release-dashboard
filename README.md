@@ -122,7 +122,8 @@ Seven rules keep the noise down, all of them learned from the live data:
   once through `config.source_applies`, so being listed and being scored are
   the same fact: a source that does not apply gets no column, no cells and no
   problems. Fortress predates Bazel, conda-forge and the ROS vendor packages,
-  and is the only collection ROS carries the gz packages themselves for.
+  and is the only collection ROS carries the gz packages themselves for;
+  harmonic predates the Bazel registry, whose oldest modules are ionic's.
 
 ### Sources reach different collections
 
@@ -136,6 +137,10 @@ carry the gz source packages themselves rather than vendor wrappers —
 a user apt-gets. A Gazebo release has only really reached ROS once both agree
 with packages.osrfoundation.org, so neither is treated as a staging channel and
 being behind in either is reported.
+
+The same is true one collection later, for one column: the Bazel Central
+Registry's oldest gz modules are ionic's majors, so harmonic has no Bazel
+column either.
 
 Where a source applies is the one thing here that is declared rather than
 derived, in `config.COLLECTION_SOURCES_EXCLUDED` and `COLLECTION_SOURCES_ONLY`.
