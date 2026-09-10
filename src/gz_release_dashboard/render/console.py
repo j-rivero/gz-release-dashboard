@@ -140,11 +140,13 @@ def render(
             )
         )
         console.print(legend())
-        columns = column_order(snapshot.sources_fetched)
         grouped = group_cells(entries)
         for collection in snapshot.collections:
             if not any(k[0] == collection.name for k in grouped):
                 continue
+            # Per collection, not once for the run: the sources that publish
+            # fortress are not the ones that publish jetty.
+            columns = column_order(snapshot.sources_fetched, collection.name)
             console.print()
             console.print(
                 collection_table(collection.name, collection.in_development, columns, grouped)

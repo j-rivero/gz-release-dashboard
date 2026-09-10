@@ -4,7 +4,7 @@ Track the version of every Gazebo library across every packaging system that
 ships it, and flag the ones lagging behind the released GitHub tag.
 
 The dashboard covers each active collection (fortress, harmonic, ionic, jetty
-and the in-development `m`) against five sources:
+and the in-development `m`) against six sources:
 
 | column | source |
 | --- | --- |
@@ -12,7 +12,11 @@ and the in-development `m`) against five sources:
 | `bazel` | the [Bazel Central Registry](https://bcr.bazel.build) |
 | `conda` | [conda-forge](https://conda-forge.org), per subdir |
 | `brew` | the [osrf/simulation](https://github.com/osrf/homebrew-simulation) tap, per bottle |
-| `ros` ros2 / ros2-testing | vendor packages on [packages.ros.org](http://packages.ros.org) |
+| `ros vendor` ros2 / ros2-testing | vendor packages on [packages.ros.org](http://packages.ros.org) |
+| `ros deb` bootstrap / stable | the gz packages themselves, imported into [repos.ros.org/repos/ros_bootstrap](http://repos.ros.org/repos/ros_bootstrap) and [packages.ros.org/ros2/ubuntu](http://packages.ros.org/ros2/ubuntu) |
+
+Not every source reaches every collection, so the tables do not all have the
+same columns — see [Sources reach different collections](#sources-reach-different-collections).
 
 Ground truth is the release tags pushed to the `gazebosim` GitHub repositories,
 for the libraries listed in
@@ -67,14 +71,14 @@ default so a lagging package never blocks a deploy.
 | ❌ | not published where it was expected |
 | ⬆️ | ahead of the latest tag (reported, never a problem) |
 | — | never expected here |
-| · | the source was not fetched, or does not reach this collection |
+| · | the source was not fetched, or has nothing for this library |
 
 A cell collapses every platform a source builds for. The worst status wins, so
 one missing architecture cannot hide behind eleven green ones, and `(2/6)` says
 how many platforms are affected. The web page expands the same cell into its
 per-platform detail.
 
-Six rules keep the noise down, all of them learned from the live data:
+Seven rules keep the noise down, all of them learned from the live data:
 
 - **A platform must carry a real share of a collection** before it is held
   responsible for the rest. Majors are shared between collections (gz-tools 2
@@ -113,6 +117,30 @@ Six rules keep the noise down, all of them learned from the live data:
   m→rolling.
 - **Staging channels are report-only.** Nothing on `prerelease` or
   `ros2-testing` ever counts as a problem or moves the exit code.
+- **A source only answers for the collections it publishes.** Declared in
+  `config.COLLECTION_SOURCES_EXCLUDED` / `COLLECTION_SOURCES_ONLY`, and asked
+  once through `config.source_applies`, so being listed and being scored are
+  the same fact: a source that does not apply gets no column, no cells and no
+  problems. Fortress predates Bazel, conda-forge and the ROS vendor packages,
+  and is the only collection ROS carries the gz packages themselves for.
+
+### Sources reach different collections
+
+Each collection's table carries the columns of the sources that publish it, so
+fortress and jetty do not have the same header. Fortress is the ignition
+generation: there is no Bazel module, no conda-forge build and no ROS vendor
+package for it, and columns that can only ever be empty read as gaps. What it
+does have is the two Debian repositories the ROS world installs from, which
+carry the gz source packages themselves rather than vendor wrappers —
+`ros_bootstrap`, what the ROS buildfarm builds against, and `ros2/ubuntu`, what
+a user apt-gets. A Gazebo release has only really reached ROS once both agree
+with packages.osrfoundation.org, so neither is treated as a staging channel and
+being behind in either is reported.
+
+Where a source applies is the one thing here that is declared rather than
+derived, in `config.COLLECTION_SOURCES_EXCLUDED` and `COLLECTION_SOURCES_ONLY`.
+It also narrows the queries: a Debian source takes its distribution list from
+the collections it is handed, so the ROS import asks for jammy and nothing else.
 
 ## Adding a source
 
@@ -129,6 +157,22 @@ class MySource(PackageSource):
 
     def fetch(self, collections: list[Collection]) -> list[PackageRecord]:
         ...
+```
+
+A Debian repository is less than that. `sources/debian_repo.py` holds the walk
+over channels × distributions × architectures (`AptSource`) and, on top of it,
+the reading of gz source packages — the `-dbgsym` and alias filters, the newest
+stanza of a binary, the oldest binary of a source (`GzAptSource`). Both
+packages.osrfoundation.org and the ROS import declare their repositories and
+nothing else:
+
+```python
+@register_source
+class RosGzDebianSource(GzAptSource):
+    name = "ros_gz_debian"
+    channels = ("bootstrap", "stable")
+    repositories = config.ROS_GZ_DEB_CHANNELS   # channel -> repository root
+    arches = config.ROS_DEB_ARCHES
 ```
 
 Sources take their HTTP client by constructor injection, so the tests drive

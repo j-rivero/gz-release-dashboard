@@ -15,7 +15,7 @@ def offline(monkeypatch):
         config.COLLECTIONS_YAML_URL: fixture_text("gz-collections.yaml").encode(),
     }
     gzipped = {
-        packages_url(config.OSRF_DEB_BASE, "ubuntu-stable", "noble", "amd64"):
+        packages_url(config.OSRF_DEB_CHANNELS["stable"], "noble", "amd64"):
             fixture_text("osrf-packages-stable.txt"),
     }
     import gzip
@@ -225,3 +225,22 @@ def test_all_fetches_and_publishes_in_one_go(runner, offline, tmp_path):
     page = (out / "index.html").read_text()
     assert "Gazebo release dashboard" in page
     assert "problems" in result.output
+
+
+def test_a_collection_restricted_source_is_only_handed_its_collections():
+    """What a Debian source is asked for follows from the collections it gets.
+
+    The distributions to query are derived from the collections, so handing the
+    ROS gz import every collection would have it download noble and resolute
+    indexes that cannot hold anything for it.
+    """
+    from gz_release_dashboard.models import Collection, Library
+
+    collections = [
+        Collection("fortress", False, [Library("gz-sim", 6)], ["jammy"]),
+        Collection("jetty", False, [Library("gz-sim", 10)], ["noble"]),
+    ]
+    narrowed = cli._collections_for("ros_gz_debian", collections)
+    assert [c.name for c in narrowed] == ["fortress"]
+    # Every other source keeps the whole list, untouched.
+    assert cli._collections_for("osrf_debian", collections) is collections

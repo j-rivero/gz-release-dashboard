@@ -209,6 +209,10 @@ def compute_statuses(snapshot: Snapshot) -> list[StatusEntry]:
     for collection in snapshot.collections:
         library_keys = {(lib.name, lib.major) for lib in collection.libraries}
         for source in snapshot.sources_fetched:
+            # A source that does not publish this collection is not scored for
+            # it: no cells, so no absences to report and no column to draw.
+            if not config.source_applies(source, collection.name):
+                continue
             combos = _observed_combos(snapshot.records, source, library_keys)
             if collection.name != rolling_owner:
                 combos = [

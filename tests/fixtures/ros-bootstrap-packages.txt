@@ -1,0 +1,91 @@
+Package: libignition-gazebo6
+Priority: optional
+Section: libs
+Maintainer: Jose Luis Rivero <jrivero@osrfoundation.org>
+Architecture: amd64
+Source: ignition-gazebo6
+Version: 6.18.0-1~jammy
+Filename: pool/main/i/ignition-gazebo6/libignition-gazebo6_6.18.0-1~jammy_amd64.deb
+Description: Gazebo Sim classes and functions for robot apps - Shared library
+Homepage: http://gazebosim.org/
+Multi-Arch: same
+
+Package: libignition-gazebo6
+Priority: optional
+Section: libs
+Maintainer: Jose Luis Rivero <jrivero@osrfoundation.org>
+Architecture: amd64
+Source: ignition-gazebo6
+Version: 6.16.0-2~jammy
+Filename: pool/main/i/ignition-gazebo6/libignition-gazebo6_6.16.0-2~jammy_amd64.deb
+Description: Gazebo Sim classes and functions for robot apps - Shared library
+Homepage: http://gazebosim.org/
+Multi-Arch: same
+
+Package: libgz-sim6
+Priority: optional
+Section: oldlibs
+Maintainer: Jose Luis Rivero <jrivero@osrfoundation.org>
+Architecture: all
+Source: ignition-gazebo6
+Version: 6.18.0-1~jammy
+Filename: pool/main/i/ignition-gazebo6/libgz-sim6_6.18.0-1~jammy_all.deb
+Description: transitional package
+Homepage: http://gazebosim.org/
+
+Package: libignition-common4
+Priority: optional
+Section: libs
+Maintainer: Jose Luis Rivero <jrivero@osrfoundation.org>
+Architecture: amd64
+Source: ignition-common4
+Version: 4.8.1-1~jammy
+Filename: pool/main/i/ignition-common4/libignition-common4_4.8.1-1~jammy_amd64.deb
+Description: Collection of useful code used by robotics apps - Shared library
+Homepage: http://gazebosim.org/
+Multi-Arch: same
+
+Package: libignition-math6
+Priority: extra
+Section: libs
+Maintainer: Jose Luis Rivero <jrivero@osrfoundation.org>
+Architecture: amd64
+Source: ignition-math6
+Version: 6.16.0-1~jammy
+Filename: pool/main/i/ignition-math6/libignition-math6_6.16.0-1~jammy_amd64.deb
+Description: Gazebo Math Library - Shared library
+Homepage: https://github.com/gazebosim/gz-math
+Multi-Arch: same
+
+Package: libignition-math6-dev
+Priority: extra
+Section: libdevel
+Maintainer: Jose Luis Rivero <jrivero@osrfoundation.org>
+Architecture: amd64
+Source: ignition-math6
+Version: 6.16.0-1~jammy
+Filename: pool/main/i/ignition-math6/libignition-math6-dev_6.16.0-1~jammy_amd64.deb
+Description: Gazebo Math Library - Development files
+Homepage: https://github.com/gazebosim/gz-math
+Multi-Arch: same
+
+Package: ignition-fortress
+Priority: optional
+Section: libdevel
+Maintainer: Jose Luis Rivero <jrivero@osrfoundation.org>
+Architecture: amd64
+Version: 1.0.3-2~jammy
+Filename: pool/main/i/ignition-fortress/ignition-fortress_1.0.3-2~jammy_amd64.deb
+Description: Collection of Gazebo packages - Fortress
+Homepage: http://gazebosim.org/
+Multi-Arch: foreign
+
+Package: python3-bloom
+Priority: optional
+Section: python
+Maintainer: William Woodall <william@openrobotics.org>
+Architecture: all
+Version: 0.14.3+upstream-1
+Filename: pool/main/p/python3-bloom/python3-bloom_0.14.3+upstream-1_all.deb
+Description: Bloom is a release automation tool.
+Homepage: http://www.ros.org/wiki/bloom

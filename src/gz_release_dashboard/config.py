@@ -24,8 +24,11 @@ IN_DEVELOPMENT_FALLBACK = ("m",)
 
 # --- packages.osrfoundation.org -------------------------------------------
 OSRF_DEB_BASE = "http://packages.osrfoundation.org/gazebo"
-#: channel -> repository directory. The nightly repo is deliberately out of scope.
-OSRF_DEB_CHANNELS = {"stable": "ubuntu-stable", "prerelease": "ubuntu-prerelease"}
+#: channel -> repository root. The nightly repo is deliberately out of scope.
+OSRF_DEB_CHANNELS = {
+    "stable": f"{OSRF_DEB_BASE}/ubuntu-stable",
+    "prerelease": f"{OSRF_DEB_BASE}/ubuntu-prerelease",
+}
 #: Fallback only. The real list is derived per run from the packaging configs
 #: in gz-collections.yaml, which is what keeps end-of-life releases such as
 #: focal off the dashboard without anyone maintaining a list here.
@@ -52,12 +55,28 @@ HOMEBREW_FORMULA_URL = (
 #: The CDN, never the GitHub contents API: that one truncates at 1000 entries.
 BCR_METADATA_URL = "https://bcr.bazel.build/modules/{module}/metadata.json"
 
-# --- packages.ros.org -----------------------------------------------------
+# --- packages.ros.org: the ROS 2 vendor packages --------------------------
 ROS_DEB_BASE = "http://packages.ros.org"
-ROS_DEB_CHANNELS = {"ros2": "ros2", "ros2-testing": "ros2-testing"}
+#: channel -> repository root, as for the osrf repositories.
+ROS_VENDOR_CHANNELS = {
+    "ros2": f"{ROS_DEB_BASE}/ros2/ubuntu",
+    "ros2-testing": f"{ROS_DEB_BASE}/ros2-testing/ubuntu",
+}
 #: Fallback only; derived from gz-collections.yaml like OSRF_DEB_DISTROS.
 ROS_DEB_DISTROS = ("noble", "resolute")
 ROS_DEB_ARCHES = ("amd64", "arm64")
+
+# --- the ROS repositories that mirror the osrf packages -------------------
+#: ROS does not only carry vendor packages: for the ignition era it mirrors the
+#: gz source packages themselves, byte for byte the ones packages.osrfoundation
+#: .org builds, which is what a ROS user on that generation actually installs.
+#: ``ros_bootstrap`` is what the ROS buildfarm builds against and
+#: ``ros2/ubuntu`` is what users apt-get, so a Gazebo release is only really
+#: available to ROS once it has reached both.
+ROS_GZ_DEB_CHANNELS = {
+    "bootstrap": "http://repos.ros.org/repos/ros_bootstrap",
+    "stable": f"{ROS_DEB_BASE}/ros2/ubuntu",
+}
 
 # --- status policy --------------------------------------------------------
 #: Staging channels: they may carry a prerelease newer than the latest stable
@@ -94,6 +113,39 @@ ROLLING_ROSDISTROS = frozenset({"rolling"})
 EXPECTED_ABSENT: dict[str, frozenset[str]] = {
     "bazel_registry": frozenset({"gz-cmake", "gz-tools", "gz-gui", "gz-launch"}),
 }
+
+#: Sources that do not apply to a collection, as ``{collection: {sources}}``.
+#: A source listed here is neither shown nor scored for that collection: no
+#: column, no cells, no problems. Fortress predates every packaging system
+#: that grew up around Gazebo later -- there is no Bazel module, no
+#: conda-forge build and no ROS vendor package for the ignition generation --
+#: so those three columns can only ever be empty for it, and an empty column
+#: reads as a gap rather than as ground that was never claimed.
+COLLECTION_SOURCES_EXCLUDED: dict[str, frozenset[str]] = {
+    "fortress": frozenset({"bazel_registry", "conda_forge", "ros_vendor"}),
+}
+#: The reverse, as ``{source: {collections}}``: a source that applies to those
+#: collections and to no other. The ROS repositories mirror the gz packages
+#: only for the ignition generation; newer collections reach ROS as vendor
+#: packages instead, which ``ros_vendor`` already reports.
+COLLECTION_SOURCES_ONLY: dict[str, frozenset[str]] = {
+    "ros_gz_debian": frozenset({"fortress"}),
+}
+
+
+def source_applies(source: str, collection: str) -> bool:
+    """Whether ``source`` is meant to publish ``collection`` at all.
+
+    The one gate for both halves of the question: the renderers ask it to
+    decide whether to draw a column, and the status engine asks it to decide
+    whether to score one. Asking it in one place is what keeps "not listed"
+    and "not supported" the same fact.
+    """
+    if source in COLLECTION_SOURCES_EXCLUDED.get(collection, frozenset()):
+        return False
+    only = COLLECTION_SOURCES_ONLY.get(source)
+    return only is None or collection in only
+
 
 #: Fraction of a collection's libraries a platform must carry before the
 #: dashboard holds that platform responsible for the rest. Majors are shared

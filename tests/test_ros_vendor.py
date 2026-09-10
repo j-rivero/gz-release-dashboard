@@ -8,9 +8,7 @@ from gz_release_dashboard.sources.ros_vendor import RosVendorSource, parse_descr
 
 
 def url(channel, distro, arch):
-    return packages_url(
-        config.ROS_DEB_BASE, f"{config.ROS_DEB_CHANNELS[channel]}/ubuntu", distro, arch
-    )
+    return packages_url(config.ROS_VENDOR_CHANNELS[channel], distro, arch)
 
 
 @pytest.fixture

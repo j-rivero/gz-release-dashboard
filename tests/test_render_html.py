@@ -4,7 +4,7 @@ import pytest
 from test_render_console import build_snapshot
 
 from gz_release_dashboard import engine
-from gz_release_dashboard.models import PackageRecord
+from gz_release_dashboard.models import Collection, Library, PackageRecord
 from gz_release_dashboard.render import html as html_render
 
 
@@ -110,7 +110,7 @@ def test_the_view_counts_findings_and_the_cells_they_affect():
     view = html_render.build_view(snapshot, engine.compute_statuses(snapshot))
     assert len(view["problems"]) == 1
     assert view["problem_cells"] == 1
-    assert view["columns"] == [
+    assert view["collections"][0]["columns"] == [
         {"source": "osrf deb", "channel": "stable"},
         {"source": "osrf deb", "channel": "prerelease"},
     ]
@@ -120,10 +120,40 @@ def test_channel_less_sources_get_an_explicit_channel_label():
     snapshot = build_snapshot()
     snapshot.sources_fetched = ["osrf_debian", "bazel_registry", "ros_vendor"]
     view = html_render.build_view(snapshot, engine.compute_statuses(snapshot))
-    assert view["columns"] == [
+    assert view["collections"][0]["columns"] == [
         {"source": "osrf deb", "channel": "stable"},
         {"source": "osrf deb", "channel": "prerelease"},
         {"source": "bazel", "channel": "(all)"},
-        {"source": "ros", "channel": "ros2"},
-        {"source": "ros", "channel": "ros2-testing"},
+        {"source": "ros vendor", "channel": "ros2"},
+        {"source": "ros vendor", "channel": "ros2-testing"},
     ]
+
+
+def test_each_collection_carries_the_columns_that_apply_to_it():
+    """Every table has a header of its own, so fortress can differ from jetty."""
+    snapshot = build_snapshot()
+    snapshot.sources_fetched = ["osrf_debian", "conda_forge", "ros_gz_debian"]
+    snapshot.collections.append(
+        Collection("fortress", False, [Library("gz-sim", 6)])
+    )
+    snapshot.records.append(
+        PackageRecord(
+            source="ros_gz_debian", channel="bootstrap", platform="jammy",
+            arch="amd64", library="gz-sim", major=6, pkg_name="ignition-gazebo6",
+            raw_version="6.18.0-1~jammy", upstream_version="6.18.0",
+        )
+    )
+    view = html_render.build_view(snapshot, engine.compute_statuses(snapshot))
+    by_name = {c["name"]: c for c in view["collections"]}
+    assert [c["source"] for c in by_name["jetty"]["columns"]] == [
+        "osrf deb", "osrf deb", "conda",
+    ]
+    assert [c["source"] for c in by_name["fortress"]["columns"]] == [
+        "osrf deb", "osrf deb", "ros deb", "ros deb",
+    ]
+    # And the rows are as wide as their own header, never the widest one.
+    assert all(
+        len(row["cells"]) == len(collection["columns"])
+        for collection in view["collections"]
+        for row in collection["rows"]
+    )

@@ -46,6 +46,13 @@ def _detail(entry: StatusEntry) -> dict:
     }
 
 
+def _column_views(columns: list[tuple[str, str]]) -> list[dict]:
+    return [
+        {"source": source_label(source), "channel": channel or "(all)"}
+        for source, channel in columns
+    ]
+
+
 def _cell_view(entries: list[StatusEntry]) -> dict | None:
     cell = aggregate_cell(entries)
     if cell is None:
@@ -69,17 +76,20 @@ def _cell_view(entries: list[StatusEntry]) -> dict | None:
 
 def build_view(snapshot: Snapshot, entries: list[StatusEntry]) -> dict:
     """Everything the template needs, with no logic left in the template."""
-    columns = column_order(snapshot.sources_fetched)
     grouped = group_cells(entries)
     collections = []
     for collection in snapshot.collections:
         libraries = sorted({(k[1], k[2]) for k in grouped if k[0] == collection.name})
         if not libraries:
             continue
+        # Per collection, not once for the run: the sources that publish
+        # fortress are not the ones that publish jetty.
+        columns = column_order(snapshot.sources_fetched, collection.name)
         collections.append(
             {
                 "name": collection.name,
                 "in_development": collection.in_development,
+                "columns": _column_views(columns),
                 "rows": [
                     {
                         "library": library,
@@ -101,10 +111,6 @@ def build_view(snapshot: Snapshot, entries: list[StatusEntry]) -> dict:
     return {
         "generated_at": snapshot.generated_at,
         "tool_version": snapshot.tool_version,
-        "columns": [
-            {"source": source_label(source), "channel": channel or "(all)"}
-            for source, channel in columns
-        ],
         "collections": collections,
         "legend": [
             {"glyph": glyph, "css": STATUS_CSS[status], "label": STATUS_LABELS[status]}

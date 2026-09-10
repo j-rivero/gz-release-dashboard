@@ -69,6 +69,30 @@ def test_column_order_expands_channels_and_ignores_unfetched_sources():
     assert column_order([]) == []
 
 
+def test_column_order_keeps_only_the_sources_that_publish_the_collection():
+    """Asked about a collection, it answers for that collection.
+
+    fortress predates conda-forge and the ROS vendor packages, and is the only
+    collection the ROS repositories carry the gz packages themselves for.
+    """
+    fetched = ["osrf_debian", "conda_forge", "ros_vendor", "ros_gz_debian"]
+    assert column_order(fetched, "fortress") == [
+        ("osrf_debian", "stable"),
+        ("osrf_debian", "prerelease"),
+        ("ros_gz_debian", "bootstrap"),
+        ("ros_gz_debian", "stable"),
+    ]
+    assert column_order(fetched, "jetty") == [
+        ("osrf_debian", "stable"),
+        ("osrf_debian", "prerelease"),
+        ("conda_forge", ""),
+        ("ros_vendor", "ros2"),
+        ("ros_vendor", "ros2-testing"),
+    ]
+    # Asked about no collection in particular, it still answers for all of them.
+    assert len(column_order(fetched)) == 7
+
+
 def build_snapshot():
     s = snap.new_snapshot(["osrf_debian"])
     s.collections = [

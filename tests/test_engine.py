@@ -369,3 +369,93 @@ def test_rosdistro_of_leaves_other_platforms_alone():
     assert engine.rosdistro_of("rolling@noble") == "rolling"
     assert engine.rosdistro_of("noble") == "noble"
     assert engine.rosdistro_of("linux-64") == "linux-64"
+
+
+# --- which sources apply to which collection -------------------------------
+
+
+@pytest.fixture
+def fortress():
+    return Collection(
+        "fortress", False, [Library("gz-sim", 6), Library("gz-math", 6)]
+    )
+
+
+@pytest.fixture
+def fortress_truth():
+    return [
+        GroundTruthEntry("gz-sim", 6, "6.18.0", None),
+        GroundTruthEntry("gz-math", 6, "6.17.0", None),
+    ]
+
+
+def ros_gz(library, major, version, channel="bootstrap", arch="amd64"):
+    return record(
+        library, major, version, source="ros_gz_debian", channel=channel,
+        platform="jammy", arch=arch,
+    )
+
+
+def test_a_source_that_does_not_reach_a_collection_is_not_scored(
+    fortress, fortress_truth
+):
+    """conda-forge never built the ignition generation.
+
+    It carries other collections, so the source is fetched and every record it
+    holds is in the snapshot; what must not happen is fortress being marked
+    missing from a packaging system that was never meant to have it.
+    """
+    s = build(
+        [fortress],
+        fortress_truth,
+        [
+            record("gz-sim", 6, "6.18.0", source="conda_forge", channel="",
+                   platform="linux-64", arch="x86_64"),
+            record("gz-math", 6, "6.17.0", source="conda_forge", channel="",
+                   platform="linux-64", arch="x86_64"),
+        ],
+        sources=("conda_forge",),
+    )
+    assert engine.compute_statuses(s) == []
+
+
+def test_a_source_restricted_to_a_collection_is_scored_there(
+    fortress, fortress_truth
+):
+    s = build(
+        [fortress],
+        fortress_truth,
+        [ros_gz("gz-sim", 6, "6.18.0"), ros_gz("gz-math", 6, "6.16.0")],
+        sources=("ros_gz_debian",),
+    )
+    scored = {(e.library, e.status) for e in engine.compute_statuses(s)}
+    assert scored == {("gz-sim", Status.UP_TO_DATE), ("gz-math", Status.BEHIND)}
+
+
+def test_a_source_restricted_to_a_collection_is_silent_elsewhere(
+    jetty, truth, fortress, fortress_truth
+):
+    """A stray ignition package in the index must not follow jetty around."""
+    s = build(
+        [fortress, jetty],
+        fortress_truth + truth,
+        [ros_gz("gz-sim", 6, "6.18.0"), ros_gz("gz-math", 6, "6.16.0")],
+        sources=("ros_gz_debian",),
+    )
+    assert {e.collection for e in engine.compute_statuses(s)} == {"fortress"}
+
+
+def test_an_import_a_release_behind_is_a_problem(fortress, fortress_truth):
+    """Neither ROS repository is a staging one, so the lag counts."""
+    s = build(
+        [fortress],
+        fortress_truth,
+        [
+            ros_gz("gz-math", 6, "6.16.0", channel="bootstrap"),
+            ros_gz("gz-math", 6, "6.16.0", channel="stable"),
+        ],
+        sources=("ros_gz_debian",),
+    )
+    found = engine.problems(engine.compute_statuses(s))
+    assert {e.channel for e in found} == {"bootstrap", "stable"}
+    assert all(e.expected_version == "6.17.0" for e in found)

@@ -6,7 +6,7 @@ import click
 
 from rich.console import Console
 
-from . import __version__, engine, ground_truth, snapshot as snap
+from . import __version__, config, engine, ground_truth, snapshot as snap
 from .collections_yaml import load_collections
 from .http import HttpClient
 from .models import FetchError, Snapshot, StatusEntry
@@ -18,6 +18,21 @@ from .sources import available_sources, create_sources
 @click.version_option(__version__, prog_name="gz-dashboard")
 def main() -> None:
     """Track Gazebo library versions across every packaging system."""
+
+
+def _collections_for(source: str, collections: list) -> list:
+    """The collections to hand ``source``, for one restricted to a few of them.
+
+    Only narrows a source that config declares does not apply beyond certain
+    collections; every other source is handed the whole list unchanged. It is
+    the query matrix this saves: the distributions to ask a Debian repository
+    for are derived from the collections it is given, so telling the ROS gz
+    import that it is fortress business keeps it from downloading noble and
+    resolute indexes that cannot hold anything for it.
+    """
+    if source not in config.COLLECTION_SOURCES_ONLY:
+        return collections
+    return [c for c in collections if config.source_applies(source, c.name)]
 
 
 def _collect(
@@ -49,7 +64,8 @@ def _collect(
     for source in instances:
         click.echo(f"fetching {source.name}...", err=True)
         try:
-            snapshot.records.extend(source.fetch(collections))
+            wanted = _collections_for(source.name, collections)
+            snapshot.records.extend(source.fetch(wanted))
         except Exception as exc:  # noqa: BLE001 - one bad source must not stop the run
             failures += 1
             snapshot.errors.append(FetchError(source.name, f"{type(exc).__name__}: {exc}"))

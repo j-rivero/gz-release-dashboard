@@ -8,9 +8,7 @@ from gz_release_dashboard.sources.osrf_debian import OsrfDebianSource
 
 
 def url(channel, distro, arch):
-    return packages_url(
-        config.OSRF_DEB_BASE, config.OSRF_DEB_CHANNELS[channel], distro, arch
-    )
+    return packages_url(config.OSRF_DEB_CHANNELS[channel], distro, arch)
 
 
 @pytest.fixture

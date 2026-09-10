@@ -53,6 +53,6 @@ def test_names_that_are_not_gz_libraries_are_rejected():
 
 
 def test_packages_url():
-    assert packages_url("http://x/gazebo", "ubuntu-stable", "noble", "amd64") == (
+    assert packages_url("http://x/gazebo/ubuntu-stable", "noble", "amd64") == (
         "http://x/gazebo/ubuntu-stable/dists/noble/main/binary-amd64/Packages.gz"
     )

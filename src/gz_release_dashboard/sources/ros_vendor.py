@@ -9,12 +9,10 @@ from __future__ import annotations
 import re
 
 from .. import config
-from ..collections_yaml import linux_distros
 from ..models import Collection, PackageRecord
 from ..versions import GzVersion
 from . import register_source
-from .base import PackageSource
-from .debian_repo import canonical_library, packages_url, parse_stanzas
+from .debian_repo import AptSource, canonical_library
 
 VENDOR_PACKAGE_RE = re.compile(r"^ros-(?P<rosdistro>[a-z]+)-[a-z0-9-]+-vendor$")
 #: The colon matters: it separates the gz grammar ("Vendor package for: gz-sim8
@@ -51,43 +49,39 @@ def parse_description(description: str) -> tuple[str, int, str] | None:
 
 
 @register_source
-class RosVendorSource(PackageSource):
-    """One record per (channel, rosdistro@distro, arch, library)."""
+class RosVendorSource(AptSource):
+    """One record per (channel, rosdistro@distro, arch, library).
+
+    The same Debian indexes as every other APT source, read for a different
+    kind of package: one rosdistro's wrapper around a gz library rather than
+    the library itself, which is why the walk is shared but the stanza rules
+    are not.
+    """
 
     name = "ros_vendor"
     channels = ("ros2", "ros2-testing")
+    repositories = config.ROS_VENDOR_CHANNELS
+    arches = config.ROS_DEB_ARCHES
+    fallback_distros = config.ROS_DEB_DISTROS
 
     def fetch(self, collections: list[Collection]) -> list[PackageRecord]:
         known = {(lib.name, lib.major) for c in collections for lib in c.libraries}
-        # Same list as the osrf repository: a ROS distro only matters here while
-        # Gazebo still packages for the Ubuntu release underneath it.
-        distros = linux_distros(collections) or config.ROS_DEB_DISTROS
         best: dict[tuple, PackageRecord] = {}
-        for channel in self.channels:
-            repository = config.ROS_DEB_CHANNELS[channel]
-            for distro in distros:
-                for arch in config.ROS_DEB_ARCHES:
-                    url = packages_url(
-                        config.ROS_DEB_BASE, f"{repository}/ubuntu", distro, arch
-                    )
-                    text = self.http.get_gzip_text(url, ok_404=True)
-                    if not text:
-                        continue
-                    for stanza in parse_stanzas(text):
-                        record = self._record(stanza, channel, distro, arch)
-                        # No rosdistro-to-collection table: a vendor package
-                        # belongs wherever its (library, major) is shipped.
-                        if record is None or (record.library, record.major) not in known:
-                            continue
-                        key = (
-                            record.channel, record.platform, record.arch,
-                            record.library, record.major,
-                        )
-                        previous = best.get(key)
-                        if previous is None or GzVersion.parse(
-                            record.upstream_version
-                        ) > GzVersion.parse(previous.upstream_version):
-                            best[key] = record
+        for channel, distro, arch, stanza in self.stanzas(collections):
+            record = self._record(stanza, channel, distro, arch)
+            # No rosdistro-to-collection table: a vendor package belongs
+            # wherever its (library, major) is shipped.
+            if record is None or (record.library, record.major) not in known:
+                continue
+            key = (
+                record.channel, record.platform, record.arch,
+                record.library, record.major,
+            )
+            previous = best.get(key)
+            if previous is None or GzVersion.parse(
+                record.upstream_version
+            ) > GzVersion.parse(previous.upstream_version):
+                best[key] = record
         return list(best.values())
 
     def _record(

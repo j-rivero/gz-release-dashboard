@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .. import config
 from ..engine import SEVERITY, problems
 from ..models import Status, StatusEntry
 from ..versions import GzVersion, max_version
@@ -38,7 +39,11 @@ SOURCE_LABELS: dict[str, str] = {
     "conda_forge": "conda",
     "homebrew": "brew",
     "bazel_registry": "bazel",
-    "ros_vendor": "ros",
+    # Two ROS sources, so neither can be called just "ros": one is the vendor
+    # package wrapping a gz library, the other the gz packages themselves in
+    # the ROS Debian repositories.
+    "ros_vendor": "ros vendor",
+    "ros_gz_debian": "ros deb",
 }
 
 
@@ -52,19 +57,31 @@ def source_label(source: str) -> str:
     return SOURCE_LABELS.get(source, source)
 
 
-def column_order(sources_fetched: list[str]) -> list[tuple[str, str]]:
-    """``(source, channel)`` columns, in registration order, channels expanded."""
+def column_order(
+    sources_fetched: list[str], collection: str | None = None
+) -> list[tuple[str, str]]:
+    """``(source, channel)`` columns, in registration order, channels expanded.
+
+    Given a collection, only the sources that publish it: fortress predates
+    Bazel, conda-forge and the ROS vendor packages, and is the only collection
+    the ROS repositories carry the gz packages themselves for, so the two
+    tables do not have the same columns. A column nobody could ever fill reads
+    as a gap, which is exactly what the dashboard is meant to make legible.
+    """
     fetched = set(sources_fetched)
     columns: list[tuple[str, str]] = []
     for source in available_sources():
         if source not in fetched:
+            continue
+        if collection is not None and not config.source_applies(source, collection):
             continue
         for channel in source_class(source).channels or ("",):
             columns.append((source, channel))
     # Anything fetched but no longer registered still deserves a column.
     for source in sources_fetched:
         if source not in set(available_sources()):
-            columns.append((source, ""))
+            if collection is None or config.source_applies(source, collection):
+                columns.append((source, ""))
     return columns
 
 
