@@ -1,3 +1,5 @@
+import re
+
 from rich.console import Console
 
 from gz_release_dashboard import engine, snapshot as snap
@@ -203,11 +205,11 @@ def test_a_collection_older_than_a_source_does_not_get_its_column():
 
 
 def dependency(name, system, version, platform, *, library="gz-physics", major=9,
-               declared="", origin="osrf"):
+               declared="", origin="osrf", channel=""):
     return DependencyRecord(
         collection="jetty", library=library, major=major, dependency=name,
         system=system, platform=platform, declared=declared, version=version,
-        origin=origin,
+        origin=origin, channel=channel,
     )
 
 
@@ -250,10 +252,15 @@ def test_a_collection_gets_a_dependency_table_with_both_marks():
 
 def test_dependency_columns_follow_the_order_and_reach_of_the_library_sources():
     fetched = ["osrf_debian", "conda_forge", "homebrew", "bazel_registry", "ros_vendor"]
-    assert dependency_columns(fetched, "jetty") == ["deb", "bazel", "conda", "brew", "ros"]
+    assert dependency_columns(fetched, "jetty") == [
+        ("deb", "stable"), ("deb", "prerelease"), ("bazel", ""), ("conda", ""), ("brew", ""),
+        ("ros", ""),
+    ]
     # harmonic predates the Bazel modules, for its dependencies as for its libraries.
-    assert "bazel" not in dependency_columns(fetched, "harmonic")
-    assert dependency_columns(["osrf_debian"], "jetty") == ["deb"]
+    assert ("bazel", "") not in dependency_columns(fetched, "harmonic")
+    assert dependency_columns(["osrf_debian"], "jetty") == [
+        ("deb", "stable"), ("deb", "prerelease"),
+    ]
 
 
 def test_problems_only_prints_no_dependency_table():
@@ -283,3 +290,19 @@ def test_dependencies_never_count_as_problems():
     snapshot.dependencies = []
     without = console_render.render(snapshot, entries, Console(record=True, width=200))
     assert with_them == without
+
+
+def test_a_dependency_queued_in_prerelease_gets_a_deb_column_of_its_own():
+    """osrf prerelease holds zenoh 1.8.0 while stable has 1.5.0, as of 2026-09-14."""
+    snapshot = build_dependency_snapshot()
+    for channel, version in (("stable", "1.5.0"), ("prerelease", "1.8.0")):
+        snapshot.dependencies.append(
+            dependency("zenoh", "deb", version, "noble/amd64", library="gz-transport",
+                       major=15, declared="libzenohc-dev", channel=channel)
+        )
+    console = Console(record=True, width=200, force_terminal=False)
+    console_render.render(snapshot, engine.compute_statuses(snapshot), console)
+    text = console.export_text()
+    assert re.search(r"│ zenoh\s+│ 1\.5\.0\s+│ 1\.8\.0\s+│ ·", text)
+    # The warning stays in the stable column, the one that is compared.
+    assert re.search(r"│ ogre-next\s+│ 2\.3\.1–2\.3\.3 ⚠\s+│ ·\s+│ ·", text)

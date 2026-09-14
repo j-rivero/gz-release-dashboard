@@ -178,7 +178,7 @@ footer { color: var(--muted); font-size: .85rem; margin-top: 2.5rem; border-top:
         <tr>
           <th class="lib">dependency</th>
           {% for column in collection.dependency_columns %}
-          <th>{{ column }}</th>
+          <th>{{ column.system }}{% if column.channel %}<span class="chan">{{ column.channel }}</span>{% endif %}</th>
           {% endfor %}
         </tr>
       </thead>

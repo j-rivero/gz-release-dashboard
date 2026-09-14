@@ -1,0 +1,11 @@
+Package: libzenohc
+Version: 1.5.0
+Architecture: amd64
+
+Package: libzenohc-dev
+Version: 1.5.0
+Architecture: amd64
+
+Package: libzenohcpp-dev
+Version: 1.5.0
+Architecture: all

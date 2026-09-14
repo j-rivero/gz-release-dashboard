@@ -14,6 +14,7 @@ def rec(
     declared="declared",
     origin="origin",
     label=None,
+    channel="",
 ):
     return DependencyRecord(
         collection=collection,
@@ -26,6 +27,7 @@ def rec(
         version=version,
         origin=origin,
         label=label,
+        channel=channel,
     )
 
 
@@ -187,3 +189,44 @@ def test_narrowing_drops_the_cells_and_rows_it_empties():
     rows = dependency_rows([rec("deb", "6.16.6"), rec("conda", "1.5.0", dependency="zenoh")])
     narrowed = narrow_rows(rows, lambda r: r.system == "conda")
     assert [(r.dependency, list(r.cells)) for r in narrowed] == [("zenoh", ["conda"])]
+
+
+def test_a_staging_channel_sits_beside_the_cells_and_is_never_marked():
+    """osrf prerelease holds zenoh 1.8.0 while stable has 1.5.0, as of 2026-09-14.
+
+    What is queued is not what anyone installs: it takes no part in ◇, and a
+    staging cell that disagrees with itself does not warn.
+    """
+    row = row_for(
+        [
+            rec("deb", "1.5.0", "noble/amd64", dependency="zenoh", channel="stable"),
+            rec("deb", "1.8.0", "noble/amd64", dependency="zenoh", channel="prerelease"),
+            rec("deb", "1.7.0", "resolute/amd64", dependency="zenoh", channel="prerelease"),
+            rec("conda", "1.5.0", "linux-64", dependency="zenoh"),
+        ],
+        dependency="zenoh",
+    )
+    assert set(row.cells) == {"deb", "conda"}
+    assert row.cells["deb"].text == "1.5.0"
+    assert row.staged["deb"].text == "1.7.0–1.8.0"
+    assert not row.staged["deb"].warn
+    assert not row.diverges
+    assert row.cell("deb", "prerelease") is row.staged["deb"]
+    assert row.cell("deb", "stable") is row.cells["deb"]
+    assert row.cell("conda") is row.cells["conda"]
+
+
+def test_narrowing_keeps_what_is_staged_and_the_marks_of_the_whole():
+    rows = dependency_rows(
+        [
+            rec("deb", "1.5.0", dependency="zenoh", channel="stable"),
+            rec("deb", "1.8.0", dependency="zenoh", channel="prerelease"),
+            rec("conda", "1.9.0", dependency="zenoh"),
+        ]
+    )
+    [deb_only] = narrow_rows(rows, lambda r: r.system == "deb")
+    assert deb_only.staged["deb"].text == "1.8.0"
+    assert deb_only.diverges
+    [queued_only] = narrow_rows(rows, lambda r: r.channel == "prerelease")
+    assert queued_only.cells == {}
+    assert queued_only.staged["deb"].text == "1.8.0"

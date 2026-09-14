@@ -151,7 +151,8 @@ the collections it is handed, so the ROS import asks for jammy and nothing else.
 
 Under each library table sits a second one: the third-party packages that the
 collection's builds declare, one column per build system — `deb`, `bazel`,
-`conda`, `brew` and `ros vendor`. It is an inventory, not a verdict. There is no
+`conda`, `brew` and `ros vendor` — with deb split into `stable` and
+`prerelease`, like the osrf deb library columns. It is an inventory, not a verdict. There is no
 expected version for a dependency, so nothing in it is ever a problem or moves
 the exit code.
 
@@ -175,6 +176,11 @@ alias is reported as a `deps:aliases` fetch error, so a new one cannot slip by.
 | --- | --- |
 | ⚠ | one system carries several versions across its platforms or declarations: osrf noble still on ogre-next 2.3.1 while resolute has 2.3.3, shown as `2.3.1–2.3.3`. The page lists these under *dependency divergence* |
 | ◇ | systems disagree on the series (major.minor): conda-forge building dart 6.19 while the Debian side ships 6.16. Often deliberate, and shown so it is known. A patch-only difference is not marked |
+
+`deb prerelease` shows a version queued in the osrf prerelease repository while
+it is higher than what stable resolves on the same platform: zenoh 1.8.0 waiting
+above stable's 1.5.0. What is queued is not what anyone installs yet, so that
+column is never marked and takes no part in ◇.
 
 A reader follows its library source, so `--source conda_forge` fetches conda
 libraries and conda dependencies alike. The marks are settled on the whole

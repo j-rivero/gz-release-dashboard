@@ -10,13 +10,17 @@ There is no status here, only agreement. Two marks, at two levels:
   deliberate (conda-forge pins dart 6.19 while the Debian side ships 6.16) and
   is shown so it is known, not so it is fixed. A patch-level difference between
   systems is not marked at all.
+
+A version still queued in a staging channel (osrf prerelease) is shown beside
+its system but never marked: it is not what anyone installs yet.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from ..config import PRERELEASE_CHANNELS
 from ..models import DependencyRecord
 from ..versions import series, version_key
 
@@ -98,35 +102,50 @@ class DependencyRow:
     sitting it out -- is worked out from the cells unless it is given, for the
     same reason as a cell's ``warn``: ◇ compares systems, so a view showing only
     some of them must keep the verdict reached with all of them.
+
+    ``staged`` holds, per system, what is queued in a staging channel. Those
+    cells never warn and take no part in ◇.
     """
 
     collection: str
     dependency: str
     cells: dict[str, DependencyCell]
     diverges: bool | None = None
+    staged: dict[str, DependencyCell] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.diverges is None:
             held = {cell.series for cell in self.cells.values() if cell.series}
             self.diverges = len(held) > 1
 
+    def cell(self, system: str, channel: str = "") -> DependencyCell | None:
+        """The cell a ``(system, channel)`` column draws."""
+        if channel in PRERELEASE_CHANNELS:
+            return self.staged.get(system)
+        return self.cells.get(system)
+
 
 def dependency_rows(records: list[DependencyRecord]) -> list[DependencyRow]:
     """One row per ``(collection, dependency)``, sorted by both."""
-    grouped: dict[tuple[str, str], dict[str, list[DependencyRecord]]] = {}
+    grouped: dict[tuple[str, str], tuple[dict, dict]] = {}
     for record in records:
-        by_system = grouped.setdefault((record.collection, record.dependency), {})
-        by_system.setdefault(record.system, []).append(record)
+        cells, staged = grouped.setdefault((record.collection, record.dependency), ({}, {}))
+        into = staged if record.channel in PRERELEASE_CHANNELS else cells
+        into.setdefault(record.system, []).append(record)
     return [
         DependencyRow(
             collection=collection,
             dependency=dependency,
             cells={
                 system: DependencyCell(collection, dependency, system, system_records)
-                for system, system_records in by_system.items()
+                for system, system_records in cells.items()
+            },
+            staged={
+                system: DependencyCell(collection, dependency, system, system_records, warn=False)
+                for system, system_records in staged.items()
             },
         )
-        for (collection, dependency), by_system in sorted(grouped.items())
+        for (collection, dependency), (cells, staged) in sorted(grouped.items())
     ]
 
 
@@ -139,15 +158,25 @@ def narrow_rows(
     """
     narrowed = []
     for row in rows:
-        cells = {}
-        for system, cell in row.cells.items():
-            kept = [record for record in cell.records if keep(record)]
-            if kept:
-                cells[system] = DependencyCell(
-                    cell.collection, cell.dependency, system, kept, warn=cell.warn
-                )
-        if cells:
+        cells = _narrow_cells(row.cells, keep)
+        staged = _narrow_cells(row.staged, keep)
+        if cells or staged:
             narrowed.append(
-                DependencyRow(row.collection, row.dependency, cells, diverges=row.diverges)
+                DependencyRow(
+                    row.collection, row.dependency, cells, diverges=row.diverges, staged=staged
+                )
+            )
+    return narrowed
+
+
+def _narrow_cells(
+    cells: dict[str, DependencyCell], keep: Callable[[DependencyRecord], bool]
+) -> dict[str, DependencyCell]:
+    narrowed = {}
+    for system, cell in cells.items():
+        kept = [record for record in cell.records if keep(record)]
+        if kept:
+            narrowed[system] = DependencyCell(
+                cell.collection, cell.dependency, system, kept, warn=cell.warn
             )
     return narrowed

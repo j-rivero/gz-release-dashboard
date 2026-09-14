@@ -21,6 +21,7 @@ from . import (
     STATUS_STYLES,
     aggregate_cell,
     column_order,
+    dependency_column_label,
     dependency_columns,
     dependency_label,
     group_cells,
@@ -69,22 +70,25 @@ def collection_table(collection_name: str, in_development: bool, columns, groupe
     return table
 
 
-def dependency_table(rows: list[DependencyRow], systems: list[str]) -> Table:
-    """What one collection's builds declare, one column per build system."""
+def dependency_table(rows: list[DependencyRow], columns: list[tuple[str, str]]) -> Table:
+    """What one collection's builds declare, one column per build system and channel."""
     table = Table(
         title=Text("dependencies", style="dim"), title_justify="left",
         header_style="bold", expand=False,
     )
     table.add_column("dependency", style="bold")
-    for system in systems:
-        table.add_column(dependency_label(system), justify="left")
+    # Two lines as soon as one column has a channel, so the channels line up.
+    two_lines = any(channel for _, channel in columns)
+    for system, channel in columns:
+        header = f"{dependency_label(system)}\n{channel}" if two_lines else dependency_label(system)
+        table.add_column(header, justify="left")
     for row in rows:
         name = Text(row.dependency)
         if row.diverges:
             name.append(f" {DIVERGE_GLYPH}", style=DIVERGE_STYLE)
         cells = [name]
-        for system in systems:
-            cell = row.cells.get(system)
+        for system, channel in columns:
+            cell = row.cell(system, channel)
             if cell is None:
                 cells.append(Text("·", style="dim"))
                 continue
@@ -138,19 +142,21 @@ def dependency_detail_table(rows: list[DependencyRow]) -> Table:
         # what explain a mark, and an ellipsis hides exactly the part that differs.
         table.add_column(column, overflow="fold" if column in {"declared", "platforms"} else "ellipsis")
     for row in rows:
-        for system, cell in sorted(row.cells.items()):
-            lines: dict[tuple[str, str, str, str], list[str]] = {}
+        # What is installed first, then what is queued.
+        for system, cell in [*sorted(row.cells.items()), *sorted(row.staged.items())]:
+            lines: dict[tuple[str, str, str, str, str], list[str]] = {}
             for record in cell.records:
                 key = (
+                    dependency_column_label(system, record.channel),
                     f"{record.library}{record.major}",
                     record.declared,
                     record.version or record.label or "?",
                     record.origin or "-",
                 )
                 lines.setdefault(key, []).append(record.platform)
-            for (library, declared, version, origin), platforms in sorted(lines.items()):
+            for (label, library, declared, version, origin), platforms in sorted(lines.items()):
                 table.add_row(
-                    row.collection, row.dependency, dependency_label(system), library,
+                    row.collection, row.dependency, label, library,
                     declared, version, origin, ", ".join(sorted(platforms)),
                 )
     return table
@@ -232,13 +238,14 @@ def render(
             console.print(
                 collection_table(collection.name, collection.in_development, columns, grouped)
             )
-            systems = dependency_columns(snapshot.sources_fetched, collection.name)
+            declared_columns = dependency_columns(snapshot.sources_fetched, collection.name)
             declared = [
                 row for row in rows
-                if row.collection == collection.name and any(s in row.cells for s in systems)
+                if row.collection == collection.name
+                and any(row.cell(s, c) is not None for s, c in declared_columns)
             ]
             if declared:
-                console.print(dependency_table(declared, systems))
+                console.print(dependency_table(declared, declared_columns))
         if verbose:
             console.print()
             console.print(detail_table(entries))

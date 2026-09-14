@@ -11,7 +11,7 @@ looks: packages.osrfoundation.org and the Ubuntu archive beneath it.
 from __future__ import annotations
 
 import posixpath
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import requests
 
@@ -105,7 +105,7 @@ class OsrfBinary:
 
 @dataclass
 class OsrfIndex:
-    """One osrf stable index, cut down to what resolution and the alias check use."""
+    """One osrf index, cut down to what resolution and the alias check use."""
 
     binaries: dict[str, OsrfBinary]
     #: Sources building at least one tracked binary: dart, ogre-next-2.3, ...
@@ -134,7 +134,8 @@ class DebControlReader(DependencyReader):
 
     apt enables the osrf repository on top of Ubuntu and installs the higher
     of the two, so both are asked: osrf through the same stable indexes
-    ``osrf_debian`` reads, Ubuntu through one madison request per read.
+    ``osrf_debian`` reads, Ubuntu through one madison request per read. The
+    osrf prerelease indexes are read too, for what is queued beyond that.
     """
 
     system = "deb"
@@ -152,21 +153,26 @@ class DebControlReader(DependencyReader):
         ubuntu = self._ubuntu(names, live)
         gz_libraries = {library.name for c in collections for library in c.libraries}
         indexes: dict[tuple[str, str], OsrfIndex] = {}
+        prerelease: dict[tuple[str, str], OsrfIndex] = {}
         records: list[DependencyRecord] = []
         for collection, library, distro, relations in declared:
             for arch in config.OSRF_DEB_ARCHES:
                 if (distro, arch) not in indexes:
-                    indexes[distro, arch] = self._osrf_index(distro, arch)
+                    indexes[distro, arch] = self._osrf_index(distro, arch, "stable")
+                    prerelease[distro, arch] = self._osrf_index(distro, arch, "prerelease")
                 osrf = indexes[distro, arch]
                 self._check_aliases(collection, library, relations, arch, osrf, gz_libraries)
                 for relation in relations:
                     alternatives = [pair for pair in tracked(relation) if pair[0].applies_to(arch)]
-                    if alternatives:
-                        records.append(
-                            self._record(
-                                collection, library, distro, arch, alternatives, osrf, ubuntu
-                            )
-                        )
+                    if not alternatives:
+                        continue
+                    record = self._record(
+                        collection, library, distro, arch, alternatives, osrf, ubuntu
+                    )
+                    records.append(record)
+                    queued = self._queued(record, alternatives, prerelease[distro, arch])
+                    if queued is not None:
+                        records.append(queued)
         return records
 
     def _declared(
@@ -267,7 +273,39 @@ class DebControlReader(DependencyReader):
             declared=chosen.name,
             version=version,
             origin=origin,
+            channel="stable",
         )
+
+    @staticmethod
+    def _queued(
+        stable: DependencyRecord,
+        alternatives: list[tuple[Alternative, str]],
+        prerelease: OsrfIndex,
+    ) -> DependencyRecord | None:
+        """What osrf prerelease holds beyond ``stable`` on the same platform, if anything.
+
+        The first alternative prerelease carries is the one apt would pick
+        there. It is queued only while it is higher than what stable resolves:
+        once stable has caught up, what is left in prerelease is history.
+        """
+        for alternative, dependency in alternatives:
+            binary = prerelease.binaries.get(alternative.name)
+            if binary is None:
+                continue
+            if stable.version is not None and (
+                version_key(binary.version) <= version_key(stable.version)
+            ):
+                return None
+            return replace(
+                stable,
+                dependency=dependency,
+                declared=alternative.name,
+                version=binary.version,
+                origin="osrf",
+                label=None,
+                channel="prerelease",
+            )
+        return None
 
     def _release_build(self, library: Library, live: tuple[str, ...]) -> ReleaseBuild | None:
         """The first candidate repository that has an ubuntu/debian/control."""
@@ -314,9 +352,9 @@ class DebControlReader(DependencyReader):
             config.GAZEBO_RELEASE_URL.format(repo=repo, path=path), ok_404=True
         )
 
-    def _osrf_index(self, distro: str, arch: str) -> OsrfIndex:
+    def _osrf_index(self, distro: str, arch: str, channel: str) -> OsrfIndex:
         text = self.http.get_gzip_text(
-            packages_url(config.OSRF_DEB_CHANNELS["stable"], distro, arch), ok_404=True
+            packages_url(config.OSRF_DEB_CHANNELS[channel], distro, arch), ok_404=True
         )
         binaries: dict[str, OsrfBinary] = {}
         for stanza in parse_stanzas(text or ""):

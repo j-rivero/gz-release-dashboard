@@ -88,6 +88,10 @@ class DependencyRecord:
     reasons apart: a provider that was found but states no version (a ROS
     vendor, ``vendor 0.10.5``) carries one, a declaration nothing resolves
     does not.
+
+    ``channel`` is the repository channel, for a system read from more than
+    one: deb's ``stable``, or ``prerelease`` for a version still queued there.
+    It is empty for the others, and in snapshots written before it existed.
     """
 
     collection: str
@@ -100,6 +104,7 @@ class DependencyRecord:
     version: str | None
     origin: str
     label: str | None = None
+    channel: str = ""
 
 
 @dataclass

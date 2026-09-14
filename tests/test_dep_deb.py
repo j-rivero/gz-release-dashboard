@@ -463,3 +463,68 @@ def test_a_library_with_no_release_repository_declares_nothing():
     assert reader.read([jetty(("gz-sim", 10))]) == []
     assert reader.errors == []
     assert not any(u.startswith(MADISON) for u in http.requested)
+
+
+ZENOH_PLATFORMS = ("noble/amd64", "noble/arm64", "resolute/amd64", "resolute/arm64")
+
+
+def serve_transport15(http):
+    """gz-transport15 as it stands: zenoh 1.5.0 in stable, 1.8.0 queued in prerelease.
+
+    dep-deb-zenoh-<channel>-<distro>-<arch>.txt keep the three zenoh stanzas of
+    each index, live. Ubuntu carries neither name gz-transport15 declares, and
+    madison's reply to them is empty.
+    """
+    serve_release(
+        http, "gz-transport15-release", "dep-deb-gz-transport15-control.txt", ["noble", "resolute"]
+    )
+    for channel in ("stable", "prerelease"):
+        for distro in ("noble", "resolute"):
+            for arch in ARCHES:
+                http.add_gzip(
+                    packages_url(config.OSRF_DEB_CHANNELS[channel], distro, arch),
+                    fixture_text(f"dep-deb-zenoh-{channel}-{distro}-{arch}.txt"),
+                )
+    serve_madison(
+        http, {"libzenohc-dev", "libzenohcpp-dev"}, ["noble", "resolute"],
+        reply="",
+    )
+
+
+def test_a_dependency_queued_in_osrf_prerelease_is_read_beside_stable():
+    http = FakeHttpClient()
+    serve_transport15(http)
+    reader = DebControlReader(http)
+    records = reader.read([jetty(("gz-transport", 15))])
+    assert {(r.platform, r.declared, r.channel, r.version, r.origin) for r in records} == {
+        (platform, name, channel, version, "osrf")
+        for platform in ZENOH_PLATFORMS
+        for name in ("libzenohc-dev", "libzenohcpp-dev")
+        for channel, version in (("stable", "1.5.0"), ("prerelease", "1.8.0"))
+    }
+    assert reader.errors == []
+
+
+def test_a_prerelease_stable_has_caught_up_with_is_not_queued():
+    """Synthetic prerelease indexes holding libogre-next-2.3-dev 2.3.3 on both distros.
+
+    noble's stable is on 2.3.1, so 2.3.3 is queued there. resolute's stable
+    already has 2.3.3: the same version waiting in prerelease is history. The
+    comparison is per platform, not repository-wide as for the gz libraries: a
+    dependency's binary name already carries its series, and a fix queued for
+    one distro is worth seeing while another has it.
+    """
+    http = FakeHttpClient()
+    serve_rendering10(http)
+    for distro in ("noble", "resolute"):
+        for arch in ARCHES:
+            http.add_gzip(
+                packages_url(config.OSRF_DEB_CHANNELS["prerelease"], distro, arch),
+                stanza("libogre-next-2.3-dev", "ogre-next-2.3", f"2.3.3-1~{distro}", arch),
+            )
+    records = DebControlReader(http).read([jetty(("gz-rendering", 10))])
+    assert {(r.platform, r.version) for r in records if r.channel == "prerelease"} == {
+        ("noble/amd64", "2.3.3"),
+        ("noble/arm64", "2.3.3"),
+    }
+    assert {r.channel for r in records if r.dependency == "ogre"} == {"stable"}

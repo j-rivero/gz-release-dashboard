@@ -1,0 +1,59 @@
+Source: gz-transport15
+Maintainer: Jose Luis Rivero <jrivero@osrfoundation.org>
+Section: science
+Priority: optional
+Build-Depends: cmake,
+               pkg-config,
+               debhelper (>= 13),
+               dh-python,
+               doxygen,
+               cppzmq-dev,
+               python3,
+               ruby-ronn,
+               libprotoc-dev,
+               libprotobuf-dev,
+               libgz-msgs12-dev,
+               libgz-cmake5-dev,
+               libgz-tools2-dev,
+               libgz-utils4-cli-dev,
+               libgz-utils4-dev,
+               protobuf-compiler,
+               python3,
+               python3-dev,
+               python3-pybind11,
+               uuid-dev,
+               libzenohc-dev,
+               libzenohcpp-dev,
+               libzmq3-dev (>= 3.0.0),
+               libsqlite3-dev
+Vcs-Browser: https://github.com/gazebosim/gz-transport
+Vcs-Git: https://github.org/gazebo-release/gz-transport15-release
+Standards-Version: 4.5.1
+Homepage: https://github.com/gazebo-release/gz-transport
+
+Package: libgz-transport15-core-dev
+Architecture: any
+Section: libdevel
+Depends: libgz-transport15 (= ${binary:Version}),
+         uuid-dev,
+         cppzmq-dev,
+         libzmq3-dev (>= 3.0.0),
+         libgz-msgs12-dev,
+         libgz-cmake5-dev,
+         libgz-tools2-dev,
+         libgz-utils4-cli-dev,
+         libgz-utils4-dev,
+         ${shlibs:Depends},
+         ${misc:Depends}
+Multi-Arch: same
+Description: Gazebo transport Library - Core Dev files
+ Gazebo transport library combines ZeroMQ with Protobufs to create a fast and
+ efficient message passing system. Asynchronous message publication and
+ subscription is provided along with service calls and discovery.
+ .
+ Gazebo is a set of simple libraries that provide useful
+ functionality to bootstrap robot applications. The included libraries
+ encapsulate all the essentials, such as common math data types, console
+ logging, 3D mesh management, and asynchronous message passing.
+ .
+ The package ships the Gazebo transport core development files

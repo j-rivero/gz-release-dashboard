@@ -142,6 +142,7 @@ class DependencyRecord:
     version: str | None  # comparable upstream version, None if none resolved
     origin: str          # where the version came from
     label: str | None = None  # shown instead of a missing version
+    channel: str = ""    # stable | prerelease for deb, empty otherwise
 ```
 
 | system | platform | declared | origin |
@@ -159,6 +160,10 @@ records for each of them; the fetches behind them are memoised.
 ROS vendor whose description has none. The record keeps `version=None` and
 `label="vendor 0.10.5"`. A declaration nothing resolves has neither and shows as
 `?`.
+
+`channel` exists for deb, which is read from two osrf channels: `stable`, and
+`prerelease` for a version still queued there. The other systems leave it
+empty, and so does a snapshot written before it existed.
 
 ### Versions
 
@@ -264,7 +269,8 @@ is what keeps the table from going stale without anyone noticing.
 
 Every reader is handed the collections, skips a collection for which
 `config.source_applies(DEPENDENCY_SYSTEMS[system], collection)` is false, reads
-stable channels only, and returns records.
+stable channels only (deb also reads osrf prerelease, below), and returns
+records.
 
 ### `deb_control` (system `deb`)
 
@@ -305,6 +311,18 @@ first that resolves:
 
 An entry nothing resolves still yields a record, with `declared` set to its
 first matching alternative and `version=None`.
+
+**Queued.** Those records carry `channel="stable"`. The osrf prerelease
+`Packages.gz` of the same `(distro, arch)`, a URL `osrf_debian` already fetches,
+is read too. The first alternative of the entry that it carries yields a second
+record, `channel="prerelease"` and `origin="osrf"`, but only while its version
+is higher than the stable record's, or the stable record has none: once stable
+has caught up, what is left in prerelease is history. The comparison is per
+platform, not against the highest stable version anywhere as for the gz
+libraries: a dependency's binary name already carries its series, and a version
+queued for one distro is worth seeing while another has it. On 2026-09-14 zenoh
+is `1.5.0` in stable and `1.8.0` in prerelease, on noble and resolute, both
+arches.
 
 ### `deps/ubuntu.py`
 
@@ -411,6 +429,9 @@ aliases; a plain name against the `deb` aliases.
   and highest version and a `warn` flag.
 - A **row** is `(collection, dependency)` with its cells by system and a
   `diverges` flag.
+- A row's **staged** cells, by system, hold the records of a staging channel
+  (`config.PRERELEASE_CHANNELS`). A staged cell never warns and takes no part
+  in ◇: what is queued is not what anyone installs.
 - **⚠ `warn`**: the cell's records carry at least two distinct versions, by the
   equality in [Versions](#versions). That
   covers platforms, declaring libraries and declared names alike. Records
@@ -467,6 +488,9 @@ before this change ignores the key.
 - Columns are the systems, in the registration order of their library sources
   and gated by `config.source_applies` like the library columns. Labels: `deb`, `bazel`, `conda`, `brew`,
   `ros vendor`.
+- A system read from several channels (`config.DEPENDENCY_CHANNELS`) gets a
+  column per channel, the channel on the header's second line: `deb stable` and
+  `deb prerelease`. The prerelease column is never marked.
 - A cell shows the display text with ⚠ when set, and ◇ is appended to the
   dependency name.
 - `--verbose` adds a dependency detail table: platform, declaring library,
@@ -478,7 +502,8 @@ before this change ignores the key.
 **HTML.**
 
 - Each collection section gets a second table below the libraries table, built
-  by `build_view` like the first.
+  by `build_view` like the first, with the same columns as the console and the
+  channel under the system name, as in the library table.
 - Cells expand into per-platform detail through the existing details markup,
   showing declared, version and origin; conda details say "built against".
 - The legend gains ⚠ and ◇.
@@ -507,7 +532,9 @@ the evidence section.
 - `deb_control`: a link-body control file; `a | b` with the second alternative
   resolving; `[!armhf]`; an osrf index holding `libdart6.13-dev` and
   `libdart6.16-dev`; osrf beating Ubuntu and Ubuntu beating osrf; the
-  `ubuntu/debian/control` fallback; ignition-era repository naming.
+  `ubuntu/debian/control` fallback; ignition-era repository naming; zenoh
+  queued in osrf prerelease above stable (gz-transport15, 1.8.0 over 1.5.0),
+  and a prerelease version stable has caught up with.
 - `ubuntu`: madison text with `-updates` above release; the batched URL.
 - `brew_formula`: all three tap version spellings; homebrew-core JSON; a
   `=> :build` dependency skipped; a `source-only` declaring formula.
@@ -520,8 +547,9 @@ the evidence section.
 - `aliases`: full-match against sub-packages; each kind of alias-check warning.
 - `dependency_version` and `series`: a table of the spellings above.
 - `inventory`: ⚠ within a system; ◇ on series; a patch-only cross-system
-  difference unmarked; unversioned records excluded; the three expected
-  outcomes in [Inventory and marks](#inventory-and-marks).
+  difference unmarked; unversioned records excluded; staged cells unmarked and
+  kept by narrowing; the three expected outcomes in
+  [Inventory and marks](#inventory-and-marks).
 - `snapshot`: round trip, and a snapshot with no `dependencies` key.
 - `http`: the same URL is fetched once per client, 404s included.
 - `cli` and renderers: the tables and marks appear; `--source` does not change
@@ -530,7 +558,7 @@ the evidence section.
 ## Out of scope
 
 - Comparing a dependency against a required or an upstream version.
-- nightly, osrf prerelease and ros2-testing.
+- nightly and ros2-testing. osrf prerelease is read for deb, and only shown.
 - Dependencies of the `ros_gz_debian` (fortress ROS mirror) packages.
 - Whether a dependency formula is bottled on the same macOS labels as the gz
   formula.

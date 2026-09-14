@@ -182,18 +182,22 @@ def test_a_collection_gets_a_dependency_table_below_its_libraries():
 
 def test_the_view_marks_dependency_rows_and_cells():
     jetty = dependency_view()["collections"][0]
-    assert jetty["dependency_columns"] == ["deb", "conda"]
+    assert jetty["dependency_columns"] == [
+        {"system": "deb", "channel": "stable"},
+        {"system": "deb", "channel": "prerelease"},
+        {"system": "conda", "channel": ""},
+    ]
     rows = {row["dependency"]: row for row in jetty["dependency_rows"]}
     assert rows["dart"]["diverges"] and not rows["ogre-next"]["diverges"]
-    deb, conda = rows["ogre-next"]["cells"]
+    deb, queued, conda = rows["ogre-next"]["cells"]
     assert (deb["text"], deb["warn"]) == ("2.3.1–2.3.3", True)
-    assert conda is None
+    assert queued is None and conda is None
 
 
 def test_dependency_details_name_the_declaration_and_where_it_came_from():
     jetty = dependency_view()["collections"][0]
     rows = {row["dependency"]: row for row in jetty["dependency_rows"]}
-    deb, _ = rows["ogre-next"]["cells"]
+    deb, _, _ = rows["ogre-next"]["cells"]
     assert deb["details"][0] == {
         "platform": "noble/amd64",
         "version": "2.3.1",
@@ -229,3 +233,26 @@ def test_a_snapshot_without_dependencies_draws_none_of_them(page):
     assert '<th class="lib">dependency</th>' not in page
     assert 'id="divergence"' not in page
     assert "◇" not in page
+
+
+def test_a_prerelease_cell_has_a_column_of_its_own_and_never_warns():
+    """Synthetic: ogre-next 2.3.2 and 2.3.3 queued for noble in osrf prerelease."""
+    from test_render_console import build_dependency_snapshot, dependency
+
+    snapshot = build_dependency_snapshot()
+    for arch, version in (("amd64", "2.3.3"), ("arm64", "2.3.2")):
+        snapshot.dependencies.append(
+            dependency("ogre-next", "deb", version, f"noble/{arch}", library="gz-rendering",
+                       major=10, declared="libogre-next-2.3-dev", channel="prerelease")
+        )
+    entries = engine.compute_statuses(snapshot)
+    view = html_render.build_view(snapshot, entries)
+    rows = {row["dependency"]: row for row in view["collections"][0]["dependency_rows"]}
+    _, queued, _ = rows["ogre-next"]["cells"]
+    assert (queued["text"], queued["warn"]) == ("2.3.2–2.3.3", False)
+    # Only the stable deb warning is listed; nothing queued ever is.
+    assert [(item["dependency"], item["range"]) for item in view["divergence"]] == [
+        ("ogre-next", "2.3.1–2.3.3")
+    ]
+    page = html_render.render(snapshot, entries)
+    assert '<th>deb<span class="chan">prerelease</span></th>' in page

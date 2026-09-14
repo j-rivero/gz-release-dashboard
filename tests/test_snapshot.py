@@ -98,3 +98,12 @@ def test_a_snapshot_written_before_dependencies_loads_without_any(tmp_path):
     loaded = snap.load(path)
     assert loaded.dependencies == []
     assert loaded.records == _populated().records
+
+
+def test_a_dependency_record_written_before_channels_loads_without_one(tmp_path):
+    data = snap.to_dict(_populated())
+    for record in data["dependencies"]:
+        record.pop("channel", None)
+    path = tmp_path / "snapshot.json"
+    path.write_text(json.dumps(data))
+    assert [d.channel for d in snap.load(path).dependencies] == ["", ""]

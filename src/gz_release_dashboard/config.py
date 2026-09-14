@@ -142,6 +142,11 @@ DEPENDENCY_SYSTEMS: dict[str, str] = {
     "brew": "homebrew",
     "ros": "ros_vendor",
 }
+#: The channels a dependency system is read from, a column each, for the systems
+#: read from more than one. ROS vendors are read from ros2 alone.
+DEPENDENCY_CHANNELS: dict[str, tuple[str, ...]] = {
+    "deb": ("stable", "prerelease"),
+}
 #: A packaging repository per (library, major), holding the debian/ tree the
 #: osrf packages are built from.
 GAZEBO_RELEASE_URL = "https://raw.githubusercontent.com/gazebo-release/{repo}/main/{path}"

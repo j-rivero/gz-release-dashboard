@@ -109,15 +109,17 @@ def _dependency_cell_view(cell: DependencyCell | None) -> dict | None:
     }
 
 
-def _dependency_rows_view(rows: list[DependencyRow], systems: list[str]) -> list[dict]:
+def _dependency_rows_view(rows: list[DependencyRow], columns: list[tuple[str, str]]) -> list[dict]:
     return [
         {
             "dependency": row.dependency,
             "diverges": row.diverges,
-            "cells": [_dependency_cell_view(row.cells.get(system)) for system in systems],
+            "cells": [
+                _dependency_cell_view(row.cell(system, channel)) for system, channel in columns
+            ],
         }
         for row in rows
-        if any(system in row.cells for system in systems)
+        if any(row.cell(system, channel) is not None for system, channel in columns)
     ]
 
 
@@ -158,7 +160,7 @@ def build_view(
         # Per collection, not once for the run: the sources that publish
         # fortress are not the ones that publish jetty.
         columns = column_order(snapshot.sources_fetched, collection.name)
-        systems = dependency_columns(snapshot.sources_fetched, collection.name)
+        declared_columns = dependency_columns(snapshot.sources_fetched, collection.name)
         collections.append(
             {
                 "name": collection.name,
@@ -179,9 +181,12 @@ def build_view(
                     }
                     for library, major in libraries
                 ],
-                "dependency_columns": [dependency_label(system) for system in systems],
+                "dependency_columns": [
+                    {"system": dependency_label(system), "channel": channel}
+                    for system, channel in declared_columns
+                ],
                 "dependency_rows": _dependency_rows_view(
-                    [row for row in rows if row.collection == collection.name], systems
+                    [row for row in rows if row.collection == collection.name], declared_columns
                 ),
             }
         )

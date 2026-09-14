@@ -68,20 +68,29 @@ def dependency_label(system: str) -> str:
     return DEPENDENCY_LABELS.get(system, system)
 
 
-def dependency_columns(sources_fetched: list[str], collection: str) -> list[str]:
-    """The build systems to draw for ``collection``, as the library columns are.
+def dependency_column_label(system: str, channel: str = "") -> str:
+    return f"{dependency_label(system)} {channel}" if channel else dependency_label(system)
+
+
+def dependency_columns(sources_fetched: list[str], collection: str) -> list[tuple[str, str]]:
+    """The ``(system, channel)`` columns to draw for ``collection``, as the library columns are.
 
     Each system follows its library source, so it lands in that source's place
     and is gated by the same ``config.source_applies``: harmonic, which has no
-    Bazel column for its libraries, has none for its dependencies either.
+    Bazel column for its libraries, has none for its dependencies either. A
+    system read from several channels gets a column per channel, the others a
+    single one with no channel.
     """
     system_of = {source: system for system, source in config.DEPENDENCY_SYSTEMS.items()}
-    systems: list[str] = []
+    columns: list[tuple[str, str]] = []
     for source, _channel in column_order(sources_fetched, collection):
         system = system_of.get(source)
-        if system is not None and system not in systems:
-            systems.append(system)
-    return systems
+        if system is None or any(held == system for held, _ in columns):
+            continue
+        columns.extend(
+            (system, channel) for channel in config.DEPENDENCY_CHANNELS.get(system, ("",))
+        )
+    return columns
 
 
 def min_version(candidates: list[str | None]) -> str | None:

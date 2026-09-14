@@ -1,0 +1,11 @@
+Package: libzenohc
+Version: 1.8.0
+Architecture: arm64
+
+Package: libzenohc-dev
+Version: 1.8.0
+Architecture: arm64
+
+Package: libzenohcpp-dev
+Version: 1.8.0
+Architecture: all
