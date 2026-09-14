@@ -1,0 +1,34 @@
+{
+  "name": "bullet",
+  "full_name": "bullet",
+  "tap": "homebrew/core",
+  "desc": "Physics SDK",
+  "license": "Zlib",
+  "homepage": "https://pybullet.org/wordpress/",
+  "versions": {
+    "stable": "3.25",
+    "head": "HEAD",
+    "bottle": true
+  },
+  "urls": {
+    "stable": {
+      "url": "https://github.com/bulletphysics/bullet3/archive/refs/tags/3.25.tar.gz",
+      "tag": null,
+      "revision": null,
+      "using": null,
+      "checksum": "c45afb6399e3f68036ddb641c6bf6f552bf332d5ab6be62f7e6c54eda05ceb77"
+    }
+  },
+  "revision": 0,
+  "version_scheme": 0,
+  "build_dependencies": [
+    "cmake",
+    "numpy",
+    "pkgconf",
+    "python@3.14"
+  ],
+  "dependencies": [],
+  "deprecated": false,
+  "disabled": false,
+  "generated_date": "2026-09-14"
+}

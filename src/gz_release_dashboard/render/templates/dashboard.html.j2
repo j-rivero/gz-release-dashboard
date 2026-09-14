@@ -80,6 +80,9 @@ details[open] .caret::after { content: " ▾"; }
 details .platforms { margin: .4rem 0 .1rem; font-size: .78rem; border-top: 1px solid var(--line); }
 details .platforms div { display: flex; gap: .4rem; padding: .12rem 0; white-space: nowrap; }
 details .platforms .p { color: var(--muted); min-width: 9.5em; }
+.warn { color: var(--behind); } .diverge { color: var(--ahead); }
+.scroll + .scroll { margin-top: .75rem; }
+details .platforms .note { color: var(--muted); }
 .panel { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: .3rem 1rem; }
 .panel.bad { border-color: var(--missing); }
 .panel ul { margin: .6rem 0; padding-left: 1.1rem; }
@@ -106,6 +109,9 @@ footer { color: var(--muted); font-size: .85rem; margin-top: 2.5rem; border-top:
   <a href="#{{ collection.name }}">{{ collection.name }}</a>
   {% endfor %}
   <a href="#problems">problems ({{ problems | length }})</a>
+  {% if has_dependencies %}
+  <a href="#divergence">dependency divergence ({{ divergence | length }})</a>
+  {% endif %}
 </nav>
 
 {% for collection in collections %}
@@ -165,6 +171,51 @@ footer { color: var(--muted); font-size: .85rem; margin-top: 2.5rem; border-top:
       </tbody>
     </table>
   </div>
+  {% if collection.dependency_rows %}
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th class="lib">dependency</th>
+          {% for column in collection.dependency_columns %}
+          <th>{{ column }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in collection.dependency_rows %}
+        <tr>
+          <td class="lib">{{ row.dependency }}{% if row.diverges %} <span class="diverge" title="{{ diverge_label }}">{{ diverge_glyph }}</span>{% endif %}</td>
+          {% for cell in row.cells %}
+          {% if cell is none %}
+          <td><span class="empty">·</span></td>
+          {% else %}
+          <td>
+            <details>
+              <summary>
+                <span class="v">{{ cell.text }}</span>
+                {% if cell.warn %}<span class="warn" title="{{ warn_label }}">{{ warn_glyph }}</span>{% endif %}
+                <span class="caret"></span>
+              </summary>
+              <div class="platforms">
+                {% for detail in cell.details %}
+                <div>
+                  <span class="p">{{ detail.platform }}</span>
+                  <span class="v">{{ detail.version }}</span>
+                  <span class="note">{{ detail.declared }} &middot; {{ detail.library }}{% if detail.origin %} &middot; {{ detail.origin }}{% endif %}</span>
+                </div>
+                {% endfor %}
+              </div>
+            </details>
+          </td>
+          {% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
 </section>
 {% endfor %}
 
@@ -194,6 +245,35 @@ footer { color: var(--muted); font-size: .85rem; margin-top: 2.5rem; border-top:
     {% endif %}
   </div>
 </section>
+
+{% if has_dependencies %}
+<section id="divergence">
+  <div class="section-head">
+    <h2>dependency divergence</h2>
+    <span class="tag">{{ divergence | length }}</span>
+  </div>
+  <p class="sub">
+    Where one build system carries more than one version of a dependency, across
+    its platforms or its declarations. Informational: nothing here is a problem.
+  </p>
+  <div class="panel">
+    {% if divergence %}
+    <ul>
+      {% for item in divergence %}
+      <li>
+        <span class="warn">{{ warn_glyph }}</span>
+        <strong>{{ item.collection }}/{{ item.dependency }}</strong>
+        <span class="v">{{ item.range }}</span> in {{ item.system }}
+        <span class="count">&mdash; lowest on {{ item.lowest | join(", ") }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>Every build system agrees with itself.</p>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
 
 {% if errors %}
 <section id="errors">

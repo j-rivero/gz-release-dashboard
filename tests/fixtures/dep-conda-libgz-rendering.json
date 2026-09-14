@@ -1,0 +1,205 @@
+{
+ "name": "libgz-rendering",
+ "latest_version": "10.0.2",
+ "versions": [
+  "10.0.0",
+  "8.2.2",
+  "9.4.0",
+  "10.0.1",
+  "10.0.2"
+ ],
+ "platforms": {
+  "win-64": "10.0.2",
+  "osx-64": "10.0.2",
+  "osx-arm64": "10.0.2",
+  "linux-aarch64": "10.0.2",
+  "linux-ppc64le": "10.0.2",
+  "linux-64": "10.0.2"
+ },
+ "files": [
+  {
+   "description": null,
+   "dependencies": [
+    "depends"
+   ],
+   "distribution_type": "conda",
+   "basename": "linux-64/libgz-rendering-10.0.2-heeb8b46_1.conda",
+   "attrs": {
+    "operatingsystem": "linux",
+    "machine": "x86_64",
+    "target-triplet": "x86_64-any-linux",
+    "has_prefix": false,
+    "subdir": "linux-64",
+    "arch": "x86_64",
+    "build": "heeb8b46_1",
+    "build_number": 1,
+    "depends": [
+     "ogre >=1.10.12.1,<1.11.0a0",
+     "__glibc >=2.17,<3.0.a0",
+     "libstdcxx >=14",
+     "libgcc >=14",
+     "libgz-utils >=4.0.0,<5.0a0",
+     "libglx >=1.7.0,<2.0a0",
+     "libgz-common >=7.4.0,<8.0a0",
+     "libopengl >=1.7.0,<2.0a0",
+     "libglu >=9.0.3,<9.1.0a0",
+     "libegl >=1.7.0,<2.0a0",
+     "ogre-next >=2.3.3,<2.3.4.0a0",
+     "libgz-math >=9.3.0,<10.0a0",
+     "libgz-plugin >=4.0.0,<5.0a0"
+    ],
+    "license": "Apache-2.0",
+    "platform": "linux",
+    "timestamp": 1788289056406
+   },
+   "upload_time": "2026-09-01 19:03:58.301000+00:00",
+   "md5": "d751c077e0f584ad06c11aea4bb09923",
+   "sha256": "714585055ed3163b879f5503bdb0a94cb695acabdc7e9d075c3e917be525da37",
+   "size": 6333428,
+   "full_name": "conda-forge/libgz-rendering/10.0.2/linux-64/libgz-rendering-10.0.2-heeb8b46_1.conda",
+   "download_url": "//api.anaconda.org/download/conda-forge/libgz-rendering/10.0.2/linux-64/libgz-rendering-10.0.2-heeb8b46_1.conda",
+   "type": "conda",
+   "version": "10.0.2",
+   "ndownloads": 342,
+   "owner": "conda-forge",
+   "labels": [
+    "main"
+   ]
+  },
+  {
+   "description": null,
+   "dependencies": [
+    "depends"
+   ],
+   "distribution_type": "conda",
+   "basename": "linux-aarch64/libgz-rendering-10.0.2-h9c24600_1.conda",
+   "attrs": {
+    "operatingsystem": "linux",
+    "machine": "aarch64",
+    "target-triplet": "aarch64-any-linux",
+    "has_prefix": false,
+    "subdir": "linux-aarch64",
+    "arch": "aarch64",
+    "build": "h9c24600_1",
+    "build_number": 1,
+    "depends": [
+     "ogre >=1.10.12.1,<1.11.0a0",
+     "libgcc >=14",
+     "libstdcxx >=14",
+     "ogre-next >=2.3.3,<2.3.4.0a0",
+     "libgz-common >=7.4.0,<8.0a0",
+     "libgz-utils >=4.0.0,<5.0a0",
+     "libglx >=1.7.0,<2.0a0",
+     "libglu >=9.0.3,<9.1.0a0",
+     "libopengl >=1.7.0,<2.0a0",
+     "libegl >=1.7.0,<2.0a0",
+     "libgz-plugin >=4.0.0,<5.0a0",
+     "libgz-math >=9.3.0,<10.0a0"
+    ],
+    "license": "Apache-2.0",
+    "platform": "linux",
+    "timestamp": 1788289091947
+   },
+   "upload_time": "2026-09-01 19:04:13.087000+00:00",
+   "md5": "0d5731b260d3e24d5c27c0c149176aff",
+   "sha256": "6b7990631d43b6668b668942a8429ffa53c6a45dad69e09a8ab9280c68c91b65",
+   "size": 6397326,
+   "full_name": "conda-forge/libgz-rendering/10.0.2/linux-aarch64/libgz-rendering-10.0.2-h9c24600_1.conda",
+   "download_url": "//api.anaconda.org/download/conda-forge/libgz-rendering/10.0.2/linux-aarch64/libgz-rendering-10.0.2-h9c24600_1.conda",
+   "type": "conda",
+   "version": "10.0.2",
+   "ndownloads": 48,
+   "owner": "conda-forge",
+   "labels": [
+    "main"
+   ]
+  },
+  {
+   "description": null,
+   "dependencies": [
+    "depends"
+   ],
+   "distribution_type": "conda",
+   "basename": "linux-64/libgz-rendering-10.0.0-heeb8b46_0.conda",
+   "attrs": {
+    "operatingsystem": "linux",
+    "machine": "x86_64",
+    "target-triplet": "x86_64-any-linux",
+    "has_prefix": false,
+    "subdir": "linux-64",
+    "arch": "x86_64",
+    "build": "heeb8b46_0",
+    "build_number": 0,
+    "depends": [
+     "ogre >=1.10.12.1,<1.11.0a0",
+     "libstdcxx >=14",
+     "libgcc >=14",
+     "__glibc >=2.17,<3.0.a0",
+     "ogre-next >=2.3.3,<2.3.4.0a0",
+     "libgz-math >=9.0.0,<10.0a0",
+     "libegl >=1.7.0,<2.0a0",
+     "libgz-common >=7.0.0,<8.0a0",
+     "ogre >=1.10.12.1,<1.11.0a0",
+     "libgz-plugin >=4.0.0,<5.0a0",
+     "libglx >=1.7.0,<2.0a0",
+     "libglu >=9.0.3,<9.1.0a0",
+     "libgz-utils >=4.0.0,<5.0a0",
+     "libopengl >=1.7.0,<2.0a0"
+    ],
+    "license": "Apache-2.0",
+    "platform": "linux",
+    "timestamp": 1759343089756
+   },
+   "upload_time": "2025-10-01 18:36:58.740000+00:00",
+   "md5": "015d7f5241e06d666fed706e981b5072",
+   "sha256": "099f78cff854eaa440d75849f00d563b92c090181773fed28830e92ccea57939",
+   "size": 6263340,
+   "full_name": "conda-forge/libgz-rendering/10.0.0/linux-64/libgz-rendering-10.0.0-heeb8b46_0.conda",
+   "download_url": "//api.anaconda.org/download/conda-forge/libgz-rendering/10.0.0/linux-64/libgz-rendering-10.0.0-heeb8b46_0.conda",
+   "type": "conda",
+   "version": "10.0.0",
+   "ndownloads": 991,
+   "owner": "conda-forge",
+   "labels": [
+    "main"
+   ]
+  },
+  {
+   "description": null,
+   "dependencies": [
+    "depends"
+   ],
+   "distribution_type": "conda",
+   "basename": "linux-64/libgz-rendering-9.4.0-h998f959_0.conda",
+   "attrs": {
+    "operatingsystem": "linux",
+    "machine": "x86_64",
+    "target-triplet": "x86_64-any-linux",
+    "has_prefix": false,
+    "subdir": "linux-64",
+    "arch": "x86_64",
+    "build": "h998f959_0",
+    "build_number": 0,
+    "depends": [
+     "libgz-rendering9 ==9.4.0 h54a6638_0"
+    ],
+    "license": "Apache-2.0",
+    "platform": "linux",
+    "timestamp": 1759351057121
+   },
+   "upload_time": "2025-10-01 20:50:27.300000+00:00",
+   "md5": "f98248e6ea95709713aa3f97cf2c60b6",
+   "sha256": "23acc99224c3d5819a98664120b0b825a30043e5a4f2719d81ef26f598740f66",
+   "size": 8929,
+   "full_name": "conda-forge/libgz-rendering/9.4.0/linux-64/libgz-rendering-9.4.0-h998f959_0.conda",
+   "download_url": "//api.anaconda.org/download/conda-forge/libgz-rendering/9.4.0/linux-64/libgz-rendering-9.4.0-h998f959_0.conda",
+   "type": "conda",
+   "version": "9.4.0",
+   "ndownloads": 958,
+   "owner": "conda-forge",
+   "labels": [
+    "main"
+   ]
+  }
+ ]
+}

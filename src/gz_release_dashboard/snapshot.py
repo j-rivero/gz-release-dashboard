@@ -11,6 +11,7 @@ from typing import Any
 from . import __version__
 from .models import (
     Collection,
+    DependencyRecord,
     FetchError,
     GroundTruthEntry,
     Library,
@@ -57,6 +58,9 @@ def from_dict(data: dict[str, Any]) -> Snapshot:
         ],
         ground_truth=[GroundTruthEntry(**g) for g in data.get("ground_truth", [])],
         records=[PackageRecord(**r) for r in data.get("records", [])],
+        # Additive, so the schema did not move: a snapshot from before
+        # dependencies were tracked simply has none.
+        dependencies=[DependencyRecord(**d) for d in data.get("dependencies", [])],
         errors=[FetchError(**e) for e in data.get("errors", [])],
     )
 

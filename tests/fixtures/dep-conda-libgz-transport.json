@@ -1,0 +1,161 @@
+{
+ "name": "libgz-transport",
+ "latest_version": "15.1.0",
+ "versions": [
+  "13.4.1",
+  "14.1.0",
+  "15.0.0",
+  "15.0.1",
+  "13.5.0",
+  "15.0.2",
+  "15.1.0"
+ ],
+ "platforms": {
+  "osx-arm64": "15.1.0",
+  "win-64": "15.1.0",
+  "osx-64": "15.1.0",
+  "linux-aarch64": "15.1.0",
+  "linux-ppc64le": "15.1.0",
+  "linux-64": "15.1.0"
+ },
+ "files": [
+  {
+   "description": null,
+   "dependencies": [
+    "depends"
+   ],
+   "distribution_type": "conda",
+   "basename": "linux-64/libgz-transport-15.1.0-hf35b924_0.conda",
+   "attrs": {
+    "operatingsystem": "linux",
+    "machine": "x86_64",
+    "target-triplet": "x86_64-any-linux",
+    "has_prefix": false,
+    "subdir": "linux-64",
+    "arch": "x86_64",
+    "build": "hf35b924_0",
+    "build_number": 0,
+    "depends": [
+     "cppzmq",
+     "__glibc >=2.17,<3.0.a0",
+     "libgcc >=14",
+     "libstdcxx >=14",
+     "libsqlite >=3.53.3,<4.0a0",
+     "libzenohc >=1.9.0,<1.9.1.0a0",
+     "libgz-utils >=4.0.0,<5.0a0",
+     "libgz-msgs >=12.0.2,<13.0a0",
+     "libprotobuf >=7.35.1,<7.35.2.0a0",
+     "libuuid >=2.42.2,<3.0a0",
+     "libabseil >=20260526.0,<20260527.0a0",
+     "libabseil * cxx17*",
+     "libgz-tools >=2.0.3,<3.0a0",
+     "zeromq >=4.3.5,<4.4.0a0",
+     "libgz-cmake >=5.1.1,<6.0a0"
+    ],
+    "license": "Apache-2.0",
+    "platform": "linux",
+    "timestamp": 1784533915861
+   },
+   "upload_time": "2026-07-20 07:56:57.844000+00:00",
+   "md5": "d6af2747cce870c921c1607b0ef24427",
+   "sha256": "35bf280756b4e332b650d2eb74a030625ae125707403f041d0947eb9710221b2",
+   "size": 828796,
+   "full_name": "conda-forge/libgz-transport/15.1.0/linux-64/libgz-transport-15.1.0-hf35b924_0.conda",
+   "download_url": "//api.anaconda.org/download/conda-forge/libgz-transport/15.1.0/linux-64/libgz-transport-15.1.0-hf35b924_0.conda",
+   "type": "conda",
+   "version": "15.1.0",
+   "ndownloads": 602,
+   "owner": "conda-forge",
+   "labels": [
+    "main"
+   ]
+  },
+  {
+   "description": null,
+   "dependencies": [
+    "depends"
+   ],
+   "distribution_type": "conda",
+   "basename": "linux-ppc64le/libgz-transport-15.1.0-haceb14b_0.conda",
+   "attrs": {
+    "operatingsystem": "linux",
+    "machine": "ppc64le",
+    "target-triplet": "ppc64le-any-linux",
+    "has_prefix": false,
+    "subdir": "linux-ppc64le",
+    "arch": "ppc64le",
+    "build": "haceb14b_0",
+    "build_number": 0,
+    "depends": [
+     "cppzmq",
+     "libstdcxx >=14",
+     "libgcc >=14",
+     "libprotobuf >=7.35.1,<7.35.2.0a0",
+     "libgz-cmake >=5.1.1,<6.0a0",
+     "libgz-msgs >=12.0.2,<13.0a0",
+     "libgz-utils >=4.0.0,<5.0a0",
+     "libgz-tools >=2.0.3,<3.0a0",
+     "libuuid >=2.42.2,<3.0a0",
+     "zeromq >=4.3.5,<4.4.0a0",
+     "libabseil >=20260526.0,<20260527.0a0",
+     "libabseil * cxx17*",
+     "libsqlite >=3.53.3,<4.0a0",
+     "libzenohc >=1.2.1,<1.2.2.0a0"
+    ],
+    "license": "Apache-2.0",
+    "platform": "linux",
+    "timestamp": 1784533930084
+   },
+   "upload_time": "2026-07-20 07:58:06.950000+00:00",
+   "md5": "757cada2c073e31b189633bd06c9328f",
+   "sha256": "6029e6caa46fae4ce5ee9697cf385b33414fcb9374ab942a8e3d77e228d6bf08",
+   "size": 805375,
+   "full_name": "conda-forge/libgz-transport/15.1.0/linux-ppc64le/libgz-transport-15.1.0-haceb14b_0.conda",
+   "download_url": "//api.anaconda.org/download/conda-forge/libgz-transport/15.1.0/linux-ppc64le/libgz-transport-15.1.0-haceb14b_0.conda",
+   "type": "conda",
+   "version": "15.1.0",
+   "ndownloads": 40,
+   "owner": "conda-forge",
+   "labels": [
+    "main"
+   ]
+  },
+  {
+   "description": null,
+   "dependencies": [
+    "depends"
+   ],
+   "distribution_type": "conda",
+   "basename": "linux-64/libgz-transport-14.1.0-h1b75b6a_8.conda",
+   "attrs": {
+    "operatingsystem": "linux",
+    "machine": "x86_64",
+    "target-triplet": "x86_64-any-linux",
+    "has_prefix": false,
+    "subdir": "linux-64",
+    "arch": "x86_64",
+    "build": "h1b75b6a_8",
+    "build_number": 8,
+    "depends": [
+     "libgz-transport14 ==14.1.0 h3d52eb6_8"
+    ],
+    "license": "Apache-2.0",
+    "platform": "linux",
+    "timestamp": 1784530189396
+   },
+   "upload_time": "2026-07-20 06:55:33.389000+00:00",
+   "md5": "85f0df14c7bfd6d0c96f450a51223283",
+   "sha256": "29dcb09cfed3c654ba17292bf77bf4acd415be56b3b6ab54514ba56baa29a16a",
+   "size": 8753,
+   "full_name": "conda-forge/libgz-transport/14.1.0/linux-64/libgz-transport-14.1.0-h1b75b6a_8.conda",
+   "download_url": "//api.anaconda.org/download/conda-forge/libgz-transport/14.1.0/linux-64/libgz-transport-14.1.0-h1b75b6a_8.conda",
+   "type": "conda",
+   "version": "14.1.0",
+   "ndownloads": 314,
+   "owner": "conda-forge",
+   "labels": [
+    "main"
+   ]
+  }
+ ]
+}

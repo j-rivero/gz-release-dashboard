@@ -1,0 +1,218 @@
+{
+ "name": "libgz-physics7",
+ "latest_version": "7.5.0",
+ "versions": [
+  "7.0.0",
+  "7.1.0",
+  "7.2.0",
+  "7.3.0",
+  "7.5.0"
+ ],
+ "platforms": {
+  "win-64": "7.5.0",
+  "osx-64": "7.5.0",
+  "linux-ppc64le": "7.5.0",
+  "osx-arm64": "7.5.0",
+  "linux-64": "7.5.0",
+  "linux-aarch64": "7.5.0"
+ },
+ "files": [
+  {
+   "description": null,
+   "dependencies": [
+    "depends"
+   ],
+   "distribution_type": "conda",
+   "basename": "linux-64/libgz-physics7-7.5.0-hdfba499_7.conda",
+   "attrs": {
+    "operatingsystem": "linux",
+    "machine": "x86_64",
+    "target-triplet": "x86_64-any-linux",
+    "has_prefix": false,
+    "subdir": "linux-64",
+    "arch": "x86_64",
+    "build": "hdfba499_7",
+    "build_number": 7,
+    "depends": [
+     "__glibc >=2.17,<3.0.a0",
+     "libgcc >=14",
+     "libstdcxx >=14",
+     "bullet-cpp >=3.25,<3.26.0a0",
+     "libgz-plugin2 >=2.0.4,<3.0a0",
+     "libgz-cmake3 >=3.5.5,<4.0a0",
+     "libgz-common5 >=5.7.1,<6.0a0",
+     "libgz-utils2 >=2.2.1,<3.0a0",
+     "eigen-abi >=5.0.1.80,<5.0.1.81.0a0",
+     "libode >=0.16.6,<0.16.7.0a0",
+     "libgz-math7 >=7.5.2,<8.0a0",
+     "assimp >=6.0.5,<7.0a0",
+     "libsdformat14 >=14.8.0,<15.0a0",
+     "dartsim-cpp >=6.19.4,<6.20.0a0"
+    ],
+    "license": "Apache-2.0",
+    "platform": "linux",
+    "timestamp": 1786687850028
+   },
+   "upload_time": "2026-08-14 06:17:51.105000+00:00",
+   "md5": "af1a80c579e37b127fd83c25b65744d4",
+   "sha256": "8ac30dda53f2b1ac1be047b53fb86a21141ccbd4006b6b4de08ed440e7145796",
+   "size": 2980177,
+   "full_name": "conda-forge/libgz-physics7/7.5.0/linux-64/libgz-physics7-7.5.0-hdfba499_7.conda",
+   "download_url": "//api.anaconda.org/download/conda-forge/libgz-physics7/7.5.0/linux-64/libgz-physics7-7.5.0-hdfba499_7.conda",
+   "type": "conda",
+   "version": "7.5.0",
+   "ndownloads": 941,
+   "owner": "conda-forge",
+   "labels": [
+    "main"
+   ]
+  },
+  {
+   "description": null,
+   "dependencies": [
+    "depends"
+   ],
+   "distribution_type": "conda",
+   "basename": "linux-64/libgz-physics7-7.5.0-h8edd7e3_0.conda",
+   "attrs": {
+    "operatingsystem": "linux",
+    "machine": "x86_64",
+    "target-triplet": "x86_64-any-linux",
+    "has_prefix": false,
+    "subdir": "linux-64",
+    "arch": "x86_64",
+    "build": "h8edd7e3_0",
+    "build_number": 0,
+    "depends": [
+     "__glibc >=2.17,<3.0.a0",
+     "libgcc >=14",
+     "libstdcxx >=14",
+     "libgcc >=14",
+     "libgz-math7 >=7.5.2,<8.0a0",
+     "dartsim-cpp >=6.15.0,<6.16.0a0",
+     "libgz-common5 >=5.7.1,<6.0a0",
+     "libgz-utils2 >=2.2.1,<3.0a0",
+     "libode >=0.16.5,<0.16.6.0a0",
+     "libsdformat14 >=14.8.0,<15.0a0",
+     "bullet-cpp >=3.25,<3.26.0a0",
+     "libgz-plugin2 >=2.0.4,<3.0a0",
+     "assimp >=5.4.3,<5.4.4.0a0",
+     "libgz-cmake3 >=3.5.5,<4.0a0"
+    ],
+    "license": "Apache-2.0",
+    "platform": "linux",
+    "timestamp": 1759283531188
+   },
+   "upload_time": "2025-10-01 02:06:05.538000+00:00",
+   "md5": "adc0fee130ff99557f761ed0690b34d6",
+   "sha256": "7d215cf954170137e9d7d62e780065eb3e8288bf73a7b88144d5a798e42c79cb",
+   "size": 3734885,
+   "full_name": "conda-forge/libgz-physics7/7.5.0/linux-64/libgz-physics7-7.5.0-h8edd7e3_0.conda",
+   "download_url": "//api.anaconda.org/download/conda-forge/libgz-physics7/7.5.0/linux-64/libgz-physics7-7.5.0-h8edd7e3_0.conda",
+   "type": "conda",
+   "version": "7.5.0",
+   "ndownloads": 982,
+   "owner": "conda-forge",
+   "labels": [
+    "main"
+   ]
+  },
+  {
+   "description": null,
+   "dependencies": [
+    "depends"
+   ],
+   "distribution_type": "conda",
+   "basename": "osx-arm64/libgz-physics7-7.5.0-h371bdd1_0.conda",
+   "attrs": {
+    "operatingsystem": "darwin",
+    "machine": "arm64",
+    "target-triplet": "arm64-any-darwin",
+    "has_prefix": false,
+    "subdir": "osx-arm64",
+    "arch": "arm64",
+    "build": "h371bdd1_0",
+    "build_number": 0,
+    "depends": [
+     "libcxx >=19",
+     "__osx >=11.0",
+     "assimp >=5.4.3,<5.4.4.0a0",
+     "libgz-math7 >=7.5.2,<8.0a0",
+     "bullet-cpp >=3.25,<3.26.0a0",
+     "libgz-utils2 >=2.2.1,<3.0a0",
+     "libgz-cmake3 >=3.5.5,<4.0a0",
+     "dartsim-cpp >=6.15.0,<6.16.0a0",
+     "libgz-plugin2 >=2.0.4,<3.0a0",
+     "libode >=0.16.5,<0.16.6.0a0",
+     "libgz-common5 >=5.7.1,<6.0a0",
+     "libsdformat14 >=14.8.0,<15.0a0"
+    ],
+    "license": "Apache-2.0",
+    "platform": "osx",
+    "timestamp": 1759283717083
+   },
+   "upload_time": "2025-10-01 02:13:04.394000+00:00",
+   "md5": "eb00eedc037ed08d767727d6c23d6e9e",
+   "sha256": "990a049ca9c02d3af7e3102df41096d0b24643044c0e6e2f0fc5e9302a9e95ef",
+   "size": 3159028,
+   "full_name": "conda-forge/libgz-physics7/7.5.0/osx-arm64/libgz-physics7-7.5.0-h371bdd1_0.conda",
+   "download_url": "//api.anaconda.org/download/conda-forge/libgz-physics7/7.5.0/osx-arm64/libgz-physics7-7.5.0-h371bdd1_0.conda",
+   "type": "conda",
+   "version": "7.5.0",
+   "ndownloads": 153,
+   "owner": "conda-forge",
+   "labels": [
+    "main"
+   ]
+  },
+  {
+   "description": null,
+   "dependencies": [
+    "depends"
+   ],
+   "distribution_type": "conda",
+   "basename": "osx-arm64/libgz-physics7-7.5.0-h0bac3df_7.conda",
+   "attrs": {
+    "operatingsystem": "darwin",
+    "machine": "arm64",
+    "target-triplet": "arm64-any-darwin",
+    "has_prefix": false,
+    "subdir": "osx-arm64",
+    "arch": "arm64",
+    "build": "h0bac3df_7",
+    "build_number": 7,
+    "depends": [
+     "libcxx >=19",
+     "__osx >=11.0",
+     "dartsim-cpp >=6.19.4,<6.20.0a0",
+     "eigen-abi >=5.0.1.100,<5.0.1.101.0a0",
+     "libgz-math7 >=7.5.2,<8.0a0",
+     "libgz-plugin2 >=2.0.4,<3.0a0",
+     "assimp >=6.0.5,<7.0a0",
+     "libgz-cmake3 >=3.5.5,<4.0a0",
+     "libgz-utils2 >=2.2.1,<3.0a0",
+     "libode >=0.16.6,<0.16.7.0a0",
+     "libgz-common5 >=5.7.1,<6.0a0",
+     "bullet-cpp >=3.25,<3.26.0a0",
+     "libsdformat14 >=14.8.0,<15.0a0"
+    ],
+    "license": "Apache-2.0",
+    "platform": "osx",
+    "timestamp": 1786687932349
+   },
+   "upload_time": "2026-08-14 06:18:00.546000+00:00",
+   "md5": "394f6cd7571fe8aa26a214bc5bbcc1bb",
+   "sha256": "4ccbb7cde259f804e35e186dd3ebd3901824bab188a03447be2e565f1f03dda2",
+   "size": 2372935,
+   "full_name": "conda-forge/libgz-physics7/7.5.0/osx-arm64/libgz-physics7-7.5.0-h0bac3df_7.conda",
+   "download_url": "//api.anaconda.org/download/conda-forge/libgz-physics7/7.5.0/osx-arm64/libgz-physics7-7.5.0-h0bac3df_7.conda",
+   "type": "conda",
+   "version": "7.5.0",
+   "ndownloads": 256,
+   "owner": "conda-forge",
+   "labels": [
+    "main"
+   ]
+  }
+ ]
+}

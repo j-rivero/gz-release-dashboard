@@ -147,6 +147,40 @@ derived, in `config.COLLECTION_SOURCES_EXCLUDED` and `COLLECTION_SOURCES_ONLY`.
 It also narrows the queries: a Debian source takes its distribution list from
 the collections it is handed, so the ROS import asks for jammy and nothing else.
 
+## Dependencies
+
+Under each library table sits a second one: the third-party packages that the
+collection's builds declare, one column per build system — `deb`, `bazel`,
+`conda`, `brew` and `ros vendor`. It is an inventory, not a verdict. There is no
+expected version for a dependency, so nothing in it is ever a problem or moves
+the exit code.
+
+Every link between a collection and a dependency is read from the build files,
+so nobody maintains a list of who uses what:
+
+| system | declared in | version from |
+| --- | --- | --- |
+| deb | `Build-Depends` of the gazebo-release `debian/control` | packages.osrfoundation.org, or Ubuntu when its version is higher |
+| bazel | `bazel_dep` in the module's `MODULE.bazel` | the pin itself |
+| conda | `depends` of the `libgz-*` conda-forge artifact | the floor of the pin: what the package was built against |
+| brew | `depends_on` in the osrf/simulation formula | the tap's formula, else homebrew-core |
+| ros vendor | `Depends` of the `ros-<distro>-gz-*-vendor` package | the dependency's own vendor package, or Ubuntu |
+
+Only dependencies Gazebo packages somewhere are tracked — ogre, ogre-next,
+dart, bullet, zenoh and mujoco — each named once in `config.DEPENDENCY_ALIASES`
+with the spelling every system uses for it. A Gazebo-hosted name that matches no
+alias is reported as a `deps:aliases` fetch error, so a new one cannot slip by.
+
+| mark | meaning |
+| --- | --- |
+| ⚠ | one system carries several versions across its platforms or declarations: osrf noble still on ogre-next 2.3.1 while resolute has 2.3.3, shown as `2.3.1–2.3.3`. The page lists these under *dependency divergence* |
+| ◇ | systems disagree on the series (major.minor): conda-forge building dart 6.19 while the Debian side ships 6.16. Often deliberate, and shown so it is known. A patch-only difference is not marked |
+
+A reader follows its library source, so `--source conda_forge` fetches conda
+libraries and conda dependencies alike. The marks are settled on the whole
+snapshot before `--collection`, `--source` or `--lib` narrow it, so hiding a
+system never takes away the ◇ it was part of.
+
 ## Adding a source
 
 Sources are a factory registry. Drop a module in `src/gz_release_dashboard/sources/`,

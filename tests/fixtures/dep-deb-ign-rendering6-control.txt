@@ -1,0 +1,39 @@
+Source: ignition-rendering6
+Maintainer: Jose Luis Rivero <jrivero@osrfoundation.org>
+Section: science
+Priority: optional
+Build-Depends: cmake,
+               doxygen,
+               pkg-config,
+               debhelper (>= 11),
+               freeglut3-dev,
+               libglew-dev,
+               libfreeimage-dev,
+               libignition-cmake2-dev (>= 2.12.1),
+               libignition-common4-events-dev,
+               libignition-common4-graphics-dev,
+               libignition-math6-dev (>= 6.6.0),
+               libignition-math6-eigen3-dev (>= 6.6.0),
+               libignition-plugin-dev,
+               libogre-1.9-dev,
+               libogre-2.2-dev | libogre-next-dev
+Vcs-Browser: https://github.com/gazebosim/gz-rendering
+Vcs-Git: https://github.com/gazebo-release/gz-rendering6-release
+Standards-Version: 4.5.1
+Homepage: http://gazebosim.org/
+
+Package: libignition-rendering6
+Architecture: any
+Section: libs
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Breaks: libignition-rendering6-6  (>=  6.1.0+ds-1)
+Replaces: libignition-rendering6-6  (>=  6.1.0+ds-1)
+Multi-Arch: same
+Description: Gazebo rendering classes and functions for robot apps - Shared library
+ Gazebo Rendering is a C++ library designed to provide an abstraction for
+ different rendering engines. It offers unified APIs for creating 3D graphics
+ applications.  Gazebo rendering is a component in the Gazebo framework, a
+ set of libraries designed to rapidly develop robot applications.
+ .
+ Main shared library

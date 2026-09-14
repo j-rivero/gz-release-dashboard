@@ -47,6 +47,43 @@ SOURCE_LABELS: dict[str, str] = {
 }
 
 
+#: Build systems are named after what they build with, not after the library
+#: source that reads them: a dependency lives in "deb", whichever repository
+#: served it.
+DEPENDENCY_LABELS: dict[str, str] = {
+    "deb": "deb",
+    "bazel": "bazel",
+    "conda": "conda",
+    "brew": "brew",
+    "ros": "ros vendor",
+}
+
+WARN_GLYPH = "⚠"
+DIVERGE_GLYPH = "◇"
+WARN_LABEL = "a system disagrees with itself"
+DIVERGE_LABEL = "systems on different series"
+
+
+def dependency_label(system: str) -> str:
+    return DEPENDENCY_LABELS.get(system, system)
+
+
+def dependency_columns(sources_fetched: list[str], collection: str) -> list[str]:
+    """The build systems to draw for ``collection``, as the library columns are.
+
+    Each system follows its library source, so it lands in that source's place
+    and is gated by the same ``config.source_applies``: harmonic, which has no
+    Bazel column for its libraries, has none for its dependencies either.
+    """
+    system_of = {source: system for system, source in config.DEPENDENCY_SYSTEMS.items()}
+    systems: list[str] = []
+    for source, _channel in column_order(sources_fetched, collection):
+        system = system_of.get(source)
+        if system is not None and system not in systems:
+            systems.append(system)
+    return systems
+
+
 def min_version(candidates: list[str | None]) -> str | None:
     """Lowest parseable version among ``candidates``: the one to complain about."""
     parsed = [v for v in (GzVersion.parse(c) for c in candidates) if v is not None]

@@ -75,6 +75,34 @@ class PackageRecord:
 
 
 @dataclass
+class DependencyRecord:
+    """What one collection's build in one system declares for a dependency.
+
+    A dependency has no release tag to be scored against, so this is inventory
+    rather than a status: the name the build wrote down (``declared``) and the
+    version that name resolves to on ``platform``. ``platform`` is opaque and
+    system-defined, as for :class:`PackageRecord`: ``noble/arm64``, a bottle
+    label, a conda subdir, ``all``, ``lyrical@resolute/amd64``.
+
+    ``version`` is ``None`` when nothing gave one. ``label`` tells the two
+    reasons apart: a provider that was found but states no version (a ROS
+    vendor, ``vendor 0.10.5``) carries one, a declaration nothing resolves
+    does not.
+    """
+
+    collection: str
+    library: str
+    major: int
+    dependency: str
+    system: str
+    platform: str
+    declared: str
+    version: str | None
+    origin: str
+    label: str | None = None
+
+
+@dataclass
 class FetchError:
     """A non-fatal failure while fetching one source."""
 
@@ -109,4 +137,5 @@ class Snapshot:
     collections: list[Collection] = field(default_factory=list)
     ground_truth: list[GroundTruthEntry] = field(default_factory=list)
     records: list[PackageRecord] = field(default_factory=list)
+    dependencies: list[DependencyRecord] = field(default_factory=list)
     errors: list[FetchError] = field(default_factory=list)

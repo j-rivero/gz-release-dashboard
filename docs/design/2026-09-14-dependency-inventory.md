@@ -68,9 +68,12 @@ the seeds for their fixtures.
 - **conda.** The `gz-physics` package carries no pins; its `libgz-physics`
   output does. `libgz-physics` 9.5.1 depends on
   `dartsim-cpp >=6.19.4,<6.20.0a0` and `bullet-cpp >=3.25,<3.26.0a0`. Older
-  majors live on the legacy names: `libgz-physics7` 7.5.0 and `libgz-physics8`
-  8.3.0 pin `dartsim-cpp >=6.15.0,<6.16.0a0`, while the unversioned
-  `libgz-physics` 7.5.0 has no tracked depends. `libgz-rendering` 10.0.2 pins
+  majors live on the legacy names, while the unversioned `libgz-physics` 7.5.0
+  has no tracked depends. One version is rebuilt as its dependencies migrate,
+  and each build re-pins: `libgz-physics7` 7.5.0 pins
+  `dartsim-cpp >=6.15.0,<6.16.0a0` in build 0 and `>=6.19.4` in build 7, and
+  the newest build of `libgz-physics8` 8.3.0 pins `>=6.19.1`. So the build
+  number, not only the version, decides which pin is current. `libgz-rendering` 10.0.2 pins
   `ogre >=1.10.12.1,<1.11.0a0` and `ogre-next >=2.3.3,<2.3.4.0a0`.
   `libgz-transport` 15.1.0 pins `libzenohc >=1.9.0,<1.9.1.0a0`.
 - **BCR.** gz-physics 8.4.0 and 9.4.0 pin `dartsim 6.13.2.bcr.2`/`.bcr.3` and
@@ -244,9 +247,15 @@ the name is hosted by Gazebo, adds
 `FetchError("deps:aliases", "<collection>/<lib><major> declares <name> (<where>) with no alias")`.
 "Hosted by Gazebo" is:
 
-- deb: the binary is in the osrf index and its `Source` is not a gz library;
+- deb: the binary is in the osrf index, its `Source` is not a gz library, and
+  that `Source` builds no package that does match an alias. The last clause
+  keeps a dependency's own component packages quiet: gz-physics9 declares seven
+  `libdart6.16-*` components, all from Source `dart`;
 - brew: `Formula/<name>.rb` exists in the tap and is not a gz formula;
-- ros: a `ros-<rosdistro>-*-vendor` whose description is not a gz vendor's.
+- ros: a `ros-<rosdistro>-gz-*-vendor` present in the index whose description
+  is not a gz vendor's. Gazebo names the dependencies it vendors `gz-<name>-vendor`;
+  any other vendor (`spdlog-vendor`, which every gz-common and gz-utils vendor
+  depends on) is ROS's own and says nothing about the table.
 
 conda and bazel have no Gazebo-hosted namespace and are not checked. The check
 is what keeps the table from going stale without anyone noticing.
@@ -269,7 +278,10 @@ stable channels only, and returns records.
    exists (`ok_404`). No candidate means no deb declarations for that library.
 3. For each live distro (`linux_distros(collections)`), fetch
    `<distro>/debian/control` from that repository with `ok_404`. A distro whose
-   file is missing is one this library is not built for.
+   file is missing is one this library is not built for. The files, not the
+   collection's `distros`, decide where it is built: those come from the release
+   jobs' packaging configs, which name only the distro a job builds on (jetty
+   lists noble, while osrf publishes it on resolute too).
 4. A body that is a single line with no `:` is a relative link. Resolve it
    against the file's directory and fetch again, at most 2 hops, then give up
    with a `FetchError`.
@@ -363,15 +375,19 @@ every `bazel_dep(...)` call, multi-line calls included, that is not
 
 ### `ros_vendor_deps` (system `ros`)
 
-**Ownership.** Walk the `ros2` channel (not `ros2-testing`) for the live distros
-and arches through `AptSource`, the same memoised indexes `ros_vendor` reads. A
-stanza named `ros-<rosdistro>-*-vendor` whose description parses with
+**Ownership.** Walk both `ros2` and `ros2-testing` for the live distros and
+arches, the same memoised indexes `ros_vendor` reads. A stanza named
+`ros-<rosdistro>-*-vendor` whose description parses with
 `ros_vendor.parse_description` is a gz vendor of `(library, major)`, which
 builds `carried[rosdistro]`. A rosdistro belongs to every collection for which
 `carried[rosdistro]` holds at least `COLLECTION_PLATFORM_SHARE` of the
-collection's own libraries, except that a `ROLLING_ROSDISTROS` distro belongs only to the newest qualifying
-collection. This is the rule `engine.rolling_collection` applies today,
-extracted so both use one helper.
+collection's own libraries, except that a `ROLLING_ROSDISTROS` distro belongs
+only to the newest qualifying collection. This is the rule
+`engine.rolling_collection` applies, extracted so both use one helper
+(`engine.carries_collection`). The engine counts records from both channels, so
+ownership does too: m owns Rolling as soon as its vendors reach `ros2-testing`,
+while `ros2` still holds jetty's. Declarations and versions below come from
+`ros2` alone.
 
 **Declaration.** The `Depends` of the gz vendor stanza of each of the
 collection's `(library, major)`, split and cleaned as for deb. A

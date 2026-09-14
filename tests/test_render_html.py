@@ -157,3 +157,75 @@ def test_each_collection_carries_the_columns_that_apply_to_it():
         for collection in view["collections"]
         for row in collection["rows"]
     )
+
+
+def dependency_view():
+    from test_render_console import build_dependency_snapshot
+
+    snapshot = build_dependency_snapshot()
+    return html_render.build_view(snapshot, engine.compute_statuses(snapshot))
+
+
+def dependency_page():
+    from test_render_console import build_dependency_snapshot
+
+    return rendered(build_dependency_snapshot())[1]
+
+
+def test_a_collection_gets_a_dependency_table_below_its_libraries():
+    jetty = dependency_page().split('<section id="jetty">')[1].split("</section>")[0]
+    assert jetty.index('<th class="lib">library</th>') < jetty.index(
+        '<th class="lib">dependency</th>'
+    )
+    assert "2.3.1–2.3.3" in jetty
+
+
+def test_the_view_marks_dependency_rows_and_cells():
+    jetty = dependency_view()["collections"][0]
+    assert jetty["dependency_columns"] == ["deb", "conda"]
+    rows = {row["dependency"]: row for row in jetty["dependency_rows"]}
+    assert rows["dart"]["diverges"] and not rows["ogre-next"]["diverges"]
+    deb, conda = rows["ogre-next"]["cells"]
+    assert (deb["text"], deb["warn"]) == ("2.3.1–2.3.3", True)
+    assert conda is None
+
+
+def test_dependency_details_name_the_declaration_and_where_it_came_from():
+    jetty = dependency_view()["collections"][0]
+    rows = {row["dependency"]: row for row in jetty["dependency_rows"]}
+    deb, _ = rows["ogre-next"]["cells"]
+    assert deb["details"][0] == {
+        "platform": "noble/amd64",
+        "version": "2.3.1",
+        "declared": "libogre-next-2.3-dev",
+        "library": "gz-rendering10",
+        "origin": "osrf",
+    }
+
+
+def test_a_conda_version_says_it_is_what_the_package_was_built_against():
+    assert "built against 6.19.4" in dependency_page()
+
+
+def test_the_divergence_section_lists_each_warning_and_where_its_lowest_version_is():
+    assert dependency_view()["divergence"] == [
+        {
+            "collection": "jetty",
+            "dependency": "ogre-next",
+            "system": "deb",
+            "range": "2.3.1–2.3.3",
+            "lowest": ["noble/amd64"],
+        }
+    ]
+    assert '<section id="divergence">' in dependency_page()
+
+
+def test_the_legend_gains_the_dependency_marks():
+    glyphs = [item["glyph"] for item in dependency_view()["legend"]]
+    assert "⚠" in glyphs and "◇" in glyphs
+
+
+def test_a_snapshot_without_dependencies_draws_none_of_them(page):
+    assert '<th class="lib">dependency</th>' not in page
+    assert 'id="divergence"' not in page
+    assert "◇" not in page

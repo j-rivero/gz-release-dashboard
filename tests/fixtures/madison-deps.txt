@@ -1,0 +1,12 @@
+ libdart-dev      | 6.12.1+dfsg4-11build2      | jammy/universe    | amd64, arm64
+ libdart-dev      | 6.13.2+ds-0ubuntu3         | noble/universe    | amd64, arm64
+ libdart-dev      | 6.13.2+ds-3fakesync1build7 | resolute/universe | amd64, arm64
+ libbullet-dev    | 3.06+dfsg-4build2          | jammy/universe    | amd64, arm64
+ libbullet-dev    | 3.24+dfsg-2.1build1        | noble/universe    | amd64, arm64
+ libbullet-dev    | 3.24+dfsg-5                | resolute/universe | amd64, arm64
+ libogre-1.9-dev  | 1.9.0+dfsg1-12.1ubuntu1    | jammy/universe    | amd64, arm64
+ libogre-1.9-dev  | 1.9.0+dfsg1-14.1build2     | noble/universe    | amd64, arm64
+ libogre-1.9-dev  | 1.9.0+dfsg1-14.1build5     | resolute/universe | amd64, arm64
+ libogre-next-dev | 2.2.5+dfsg3-0ubuntu2       | jammy/universe    | amd64, arm64
+ libogre-next-dev | 2.3.3+dfsg-0ubuntu2        | noble/universe    | amd64, arm64
+ libogre-next-dev | 2.3.3+dfsg-0ubuntu3        | resolute/universe | amd64, arm64

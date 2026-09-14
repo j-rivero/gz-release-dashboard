@@ -1,0 +1,48 @@
+{
+  "name": "dartsim",
+  "full_name": "dartsim",
+  "tap": "homebrew/core",
+  "desc": "Dynamic Animation and Robotics Toolkit",
+  "license": "BSD-2-Clause",
+  "homepage": "https://dartsim.github.io/",
+  "versions": {
+    "stable": "6.19.4",
+    "head": null,
+    "bottle": true
+  },
+  "urls": {
+    "stable": {
+      "url": "https://github.com/dartsim/dart/archive/refs/tags/v6.19.4.tar.gz",
+      "tag": null,
+      "revision": null,
+      "using": null,
+      "checksum": "627a6d21650427da634503829eba6c0c20887cd3441082eb44187fb3f9250150"
+    }
+  },
+  "revision": 0,
+  "version_scheme": 0,
+  "build_dependencies": [
+    "cmake",
+    "pkgconf"
+  ],
+  "dependencies": [
+    "assimp",
+    "bullet",
+    "eigen",
+    "fcl",
+    "flann",
+    "fmt",
+    "ipopt",
+    "libccd",
+    "nlopt",
+    "octomap",
+    "ode",
+    "open-scene-graph",
+    "spdlog",
+    "tinyxml2",
+    "urdfdom"
+  ],
+  "deprecated": false,
+  "disabled": false,
+  "generated_date": "2026-09-14"
+}

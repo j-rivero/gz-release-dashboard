@@ -16,10 +16,14 @@ from . import config
 
 
 class HttpClient:
-    """Fetch URLs, optionally memoising bodies on disk between runs.
+    """Fetch URLs, memoising bodies for the life of the client and optionally on disk.
 
     ``ok_404`` turns "not found" into ``None`` instead of an exception: most
     sources are probed by guessing package names, so 404 is a normal answer.
+
+    The in-memory memo is what lets the dependency readers walk the same
+    Packages.gz indexes, formulas and anaconda documents the library sources
+    already downloaded, without downloading them again.
     """
 
     def __init__(
@@ -44,6 +48,8 @@ class HttpClient:
         adapter = HTTPAdapter(max_retries=retry)
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
+        #: url -> body, or None for a 404. Failures are never remembered.
+        self._memo: dict[str, bytes | None] = {}
 
     def _cache_path(self, url: str) -> Path | None:
         if not self.cache_dir:
@@ -51,6 +57,15 @@ class HttpClient:
         return self.cache_dir / hashlib.sha256(url.encode()).hexdigest()
 
     def get_bytes(self, url: str, *, ok_404: bool = False) -> bytes | None:
+        if url not in self._memo:
+            self._memo[url] = self._fetch(url, ok_404=ok_404)
+        body = self._memo[url]
+        if body is None and not ok_404:
+            # Remembered from a caller that allowed it; this one does not.
+            raise requests.HTTPError(f"404 Client Error: Not Found for url: {url}")
+        return body
+
+    def _fetch(self, url: str, *, ok_404: bool) -> bytes | None:
         cached = self._cache_path(url)
         if cached and cached.exists():
             body = cached.read_bytes()

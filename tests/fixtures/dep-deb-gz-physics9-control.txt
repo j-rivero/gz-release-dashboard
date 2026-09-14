@@ -1,0 +1,49 @@
+Source: gz-physics9
+Maintainer: Jose Luis Rivero <jrivero@osrfoundation.org>
+Section: science
+Priority: optional
+Build-Depends: cmake,
+               pkg-config,
+               debhelper (>= 13),
+               doxygen,
+               libbullet-dev,
+               libgz-cmake5-dev,
+               libgz-common7-geospatial-dev,
+               libgz-common7-graphics-dev,
+               libgz-common7-profiler-dev,
+               libgz-common7-testing-dev,
+               libgz-math9-dev,
+               libgz-math9-eigen3-dev,
+               libgz-plugin4-dev,
+               libgz-utils4-dev,
+               libgz-utils4-cli-dev,
+# DART from packages.o.o repositories - mandatory on all architectures except armhf
+               libdart6.16-dev [!armhf],
+               libdart6.16-collision-bullet-dev [!armhf],
+               libdart6.16-collision-ode-dev [!armhf],
+               libdart6.16-external-convhull-3d-dev [!armhf],
+               libdart6.16-external-ikfast-dev [!armhf],
+               libdart6.16-external-odelcpsolver-dev [!armhf],
+               libdart6.16-utils-dev [!armhf],
+               libdart6.16-utils-urdf-dev [!armhf],
+               libsdformat16-dev
+Vcs-Browser: https://github.com/gazebosim/gz-physics
+Vcs-Git: https://github.com/gazebo-release/gz-physics9-release
+Standards-Version: 4.5.1
+Homepage: http://gazebosim.org/
+
+Package: libgz-physics9-core-dev
+Architecture: any
+Section: libdevel
+Depends: libgz-cmake5-dev,
+         libgz-math9-dev,
+         libgz-plugin4-dev,
+         libgz-physics9 (= ${binary:Version}),
+         libgz-utils4-dev,
+         ${misc:Depends}
+Multi-Arch: same
+Description: Gazebo Physics classes and functions for robot apps - Development files
+ Gazebo Physics is a component in the Gazebo framework, a set of libraries
+ designed to rapidly develop robot applications.
+ .
+ Core component, development files

@@ -7,18 +7,28 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from ..deps.inventory import DependencyRow, dependency_rows
 from ..engine import SEVERITY
 from ..models import Snapshot, Status, StatusEntry
 from . import (
+    DIVERGE_GLYPH,
+    DIVERGE_LABEL,
     STATUS_GLYPHS,
+    WARN_GLYPH,
+    WARN_LABEL,
     group_problems,
     STATUS_LABELS,
     STATUS_STYLES,
     aggregate_cell,
     column_order,
+    dependency_columns,
+    dependency_label,
     group_cells,
     source_label,
 )
+
+WARN_STYLE = "yellow"
+DIVERGE_STYLE = "cyan"
 
 
 def _column_header(source: str, channel: str) -> str:
@@ -59,6 +69,34 @@ def collection_table(collection_name: str, in_development: bool, columns, groupe
     return table
 
 
+def dependency_table(rows: list[DependencyRow], systems: list[str]) -> Table:
+    """What one collection's builds declare, one column per build system."""
+    table = Table(
+        title=Text("dependencies", style="dim"), title_justify="left",
+        header_style="bold", expand=False,
+    )
+    table.add_column("dependency", style="bold")
+    for system in systems:
+        table.add_column(dependency_label(system), justify="left")
+    for row in rows:
+        name = Text(row.dependency)
+        if row.diverges:
+            name.append(f" {DIVERGE_GLYPH}", style=DIVERGE_STYLE)
+        cells = [name]
+        for system in systems:
+            cell = row.cells.get(system)
+            if cell is None:
+                cells.append(Text("·", style="dim"))
+                continue
+            # A label or "?" is not a version; dimming it keeps it from reading as one.
+            text = Text(cell.text, style="" if cell.versions else "dim")
+            if cell.warn:
+                text.append(f" {WARN_GLYPH}", style=WARN_STYLE)
+            cells.append(text)
+        table.add_row(*cells)
+    return table
+
+
 def detail_table(entries: list[StatusEntry]) -> Table:
     """Every platform/arch that is not simply up to date."""
     table = Table(title="details", title_justify="left", header_style="bold")
@@ -84,6 +122,37 @@ def detail_table(entries: list[StatusEntry]) -> Table:
                 style=STATUS_STYLES[entry.status],
             ),
         )
+    return table
+
+
+def dependency_detail_table(rows: list[DependencyRow]) -> Table:
+    """Every declaration, with the platforms that agree on it on one line.
+
+    A deb dependency is one record per distribution and architecture; listing
+    them one by one would bury the line that differs.
+    """
+    table = Table(title="dependency details", title_justify="left", header_style="bold")
+    for column in ("collection", "dependency", "system", "library", "declared",
+                   "version", "origin", "platforms"):
+        # Folded, never cut short: the declared pin and the platform list are
+        # what explain a mark, and an ellipsis hides exactly the part that differs.
+        table.add_column(column, overflow="fold" if column in {"declared", "platforms"} else "ellipsis")
+    for row in rows:
+        for system, cell in sorted(row.cells.items()):
+            lines: dict[tuple[str, str, str, str], list[str]] = {}
+            for record in cell.records:
+                key = (
+                    f"{record.library}{record.major}",
+                    record.declared,
+                    record.version or record.label or "?",
+                    record.origin or "-",
+                )
+                lines.setdefault(key, []).append(record.platform)
+            for (library, declared, version, origin), platforms in sorted(lines.items()):
+                table.add_row(
+                    row.collection, row.dependency, dependency_label(system), library,
+                    declared, version, origin, ", ".join(sorted(platforms)),
+                )
     return table
 
 
@@ -115,10 +184,14 @@ def problems_panel(entries: list[StatusEntry], limit: int = 40) -> Panel:
     return Panel(body, title=title, title_align="left", border_style="red")
 
 
-def legend() -> Text:
+def legend(dependencies: bool = False) -> Text:
+    """The status glyphs, and the dependency marks when there is something to mark."""
     text = Text("legend: ", style="dim")
     for status, glyph in STATUS_GLYPHS.items():
         text.append(f"{glyph} {STATUS_LABELS[status]}  ", style=STATUS_STYLES[status])
+    if dependencies:
+        text.append(f"{WARN_GLYPH} {WARN_LABEL}  ", style=WARN_STYLE)
+        text.append(f"{DIVERGE_GLYPH} {DIVERGE_LABEL}  ", style=DIVERGE_STYLE)
     return text
 
 
@@ -129,8 +202,16 @@ def render(
     *,
     verbose: bool = False,
     problems_only: bool = False,
+    rows: list[DependencyRow] | None = None,
 ) -> int:
-    """Print the dashboard; return the number of affected platform cells."""
+    """Print the dashboard; return the number of affected platform cells.
+
+    ``rows`` are the dependency rows to draw, marks already settled on the
+    whole snapshot; without them they are worked out from this one. Nothing
+    about dependencies reaches the returned count.
+    """
+    if rows is None:
+        rows = dependency_rows(snapshot.dependencies)
     if not problems_only:
         console.print(
             Text(
@@ -139,7 +220,7 @@ def render(
                 style="bold",
             )
         )
-        console.print(legend())
+        console.print(legend(dependencies=bool(rows)))
         grouped = group_cells(entries)
         for collection in snapshot.collections:
             if not any(k[0] == collection.name for k in grouped):
@@ -151,9 +232,19 @@ def render(
             console.print(
                 collection_table(collection.name, collection.in_development, columns, grouped)
             )
+            systems = dependency_columns(snapshot.sources_fetched, collection.name)
+            declared = [
+                row for row in rows
+                if row.collection == collection.name and any(s in row.cells for s in systems)
+            ]
+            if declared:
+                console.print(dependency_table(declared, systems))
         if verbose:
             console.print()
             console.print(detail_table(entries))
+            if rows:
+                console.print()
+                console.print(dependency_detail_table(rows))
     console.print()
     console.print(problems_panel(entries))
     if snapshot.errors:

@@ -5,6 +5,7 @@ import pytest
 from gz_release_dashboard import snapshot as snap
 from gz_release_dashboard.models import (
     Collection,
+    DependencyRecord,
     FetchError,
     GroundTruthEntry,
     Library,
@@ -31,6 +32,31 @@ def _populated():
             raw_version="10.5.0-1~noble",
             upstream_version="10.5.0",
         )
+    ]
+    s.dependencies = [
+        DependencyRecord(
+            collection="jetty",
+            library="gz-physics",
+            major=9,
+            dependency="dart",
+            system="deb",
+            platform="noble/amd64",
+            declared="libdart6.16-dev",
+            version="6.16.6",
+            origin="osrf",
+        ),
+        DependencyRecord(
+            collection="jetty",
+            library="gz-transport",
+            major=15,
+            dependency="zenoh",
+            system="ros",
+            platform="lyrical@resolute/amd64",
+            declared="zenoh-cpp-vendor",
+            version=None,
+            origin="ros2",
+            label="vendor 0.10.5",
+        ),
     ]
     s.errors = [FetchError("conda_forge", "boom")]
     return s
@@ -62,3 +88,13 @@ def test_new_snapshot_records_which_sources_ran():
     s = snap.new_snapshot(["conda_forge", "homebrew"])
     assert s.sources_fetched == ["conda_forge", "homebrew"]
     assert s.records == [] and s.errors == []
+
+
+def test_a_snapshot_written_before_dependencies_loads_without_any(tmp_path):
+    data = snap.to_dict(_populated())
+    del data["dependencies"]
+    path = tmp_path / "snapshot.json"
+    path.write_text(json.dumps(data))
+    loaded = snap.load(path)
+    assert loaded.dependencies == []
+    assert loaded.records == _populated().records

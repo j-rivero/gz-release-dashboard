@@ -180,7 +180,7 @@ def test_a_narrowed_view_scores_the_same_as_the_whole_dashboard(runner, tmp_path
     path.write_text(json.dumps(snap.to_dict(s)))
 
     whole = [e for e in engine.compute_statuses(snap.load(path)) if e.collection == "jetty"]
-    _, narrowed = cli._filtered(snap.load(path), ("jetty",), (), ())
+    _, narrowed, _ = cli._filtered(snap.load(path), ("jetty",), (), ())
     assert narrowed == whole
     assert not any(e.platform.startswith("rolling") for e in narrowed)
 
@@ -244,3 +244,118 @@ def test_a_collection_restricted_source_is_only_handed_its_collections():
     assert [c.name for c in narrowed] == ["fortress"]
     # Every other source keeps the whole list, untouched.
     assert cli._collections_for("osrf_debian", collections) is collections
+
+
+@pytest.fixture
+def fake_readers(monkeypatch):
+    """A deb reader with one record and one alias warning, and a conda reader."""
+    from gz_release_dashboard import deps
+    from gz_release_dashboard.deps.base import DependencyReader
+    from gz_release_dashboard.models import DependencyRecord, FetchError
+
+    class Deb(DependencyReader):
+        system = "deb"
+
+        def read(self, collections):
+            self.errors.append(FetchError("deps:aliases", "libfoo-dev has no alias"))
+            return [
+                DependencyRecord(
+                    collection=c.name, library="gz-physics", major=9, dependency="dart",
+                    system="deb", platform="noble/amd64", declared="libdart6.16-dev",
+                    version="6.16.6", origin="osrf",
+                )
+                for c in collections
+            ]
+
+    class Conda(DependencyReader):
+        system = "conda"
+
+        def read(self, collections):
+            raise AssertionError("conda_forge was not selected")
+
+    monkeypatch.setattr(deps, "_REGISTRY", {"deb": Deb, "conda": Conda})
+    return {"deb": Deb, "conda": Conda}
+
+
+def test_fetch_reads_the_dependencies_of_the_selected_sources(
+    runner, offline, fake_readers, tmp_path
+):
+    target = tmp_path / "snapshot.json"
+    result = runner.invoke(
+        cli.main,
+        ["fetch", "-o", str(target), "--source", "osrf_debian", "--collection", "jetty"],
+    )
+    assert result.exit_code == 0, result.output
+    snapshot = snap.load(target)
+    assert [(d.collection, d.dependency, d.system) for d in snapshot.dependencies] == [
+        ("jetty", "dart", "deb")
+    ]
+    sources = {e.source for e in snapshot.errors}
+    assert "deps:aliases" in sources
+    assert "deps:conda" not in sources
+
+
+def test_a_failing_reader_is_recorded_but_fails_nothing_else(
+    runner, offline, fake_readers, tmp_path, monkeypatch
+):
+    def boom(self, collections):
+        raise RuntimeError("raw.githubusercontent down")
+
+    monkeypatch.setattr(fake_readers["deb"], "read", boom)
+    target = tmp_path / "snapshot.json"
+    result = runner.invoke(
+        cli.main, ["fetch", "-o", str(target), "--source", "osrf_debian"]
+    )
+    assert result.exit_code == 0, result.output
+    snapshot = snap.load(target)
+    assert snapshot.records
+    assert any(
+        e.source == "deps:deb" and "raw.githubusercontent down" in e.message
+        for e in snapshot.errors
+    )
+
+
+@pytest.fixture
+def dependency_snapshot_file(tmp_path):
+    from test_render_console import build_dependency_snapshot
+
+    return snap.save(build_dependency_snapshot(), tmp_path / "deps.json")
+
+
+def test_narrowing_to_one_source_keeps_the_divergence_mark(runner, dependency_snapshot_file):
+    _, _, rows = cli._filtered(snap.load(dependency_snapshot_file), (), ("osrf_debian",), ())
+    [dart] = [r for r in rows if r.dependency == "dart"]
+    assert set(dart.cells) == {"deb"}
+    assert dart.diverges
+    result = runner.invoke(
+        cli.main, ["console", str(dependency_snapshot_file), "--source", "osrf_debian"]
+    )
+    assert result.exit_code == 0, result.output
+    assert "dart ◇" in result.output
+    assert "6.19.4" not in result.output
+
+
+def test_lib_keeps_the_dependencies_that_library_declares(dependency_snapshot_file):
+    snapshot, _, rows = cli._filtered(
+        snap.load(dependency_snapshot_file), (), (), ("gz-rendering",)
+    )
+    assert [r.dependency for r in rows] == ["ogre-next"]
+    assert {d.library for d in snapshot.dependencies} == {"gz-rendering"}
+
+
+def test_collection_keeps_only_that_collections_dependencies(dependency_snapshot_file):
+    snapshot, _, rows = cli._filtered(snap.load(dependency_snapshot_file), ("m",), (), ())
+    assert rows == []
+    assert snapshot.dependencies == []
+
+
+def test_a_dependency_warning_never_fails_the_gate(runner, tmp_path):
+    from test_render_console import build_dependency_snapshot
+
+    snapshot = build_dependency_snapshot()
+    snapshot.sources_fetched = ["osrf_debian"]
+    snapshot.records[1].upstream_version = "9.3.0"
+    target = snap.save(snapshot, tmp_path / "deps.json")
+    result = runner.invoke(cli.main, ["console", str(target), "--fail-on-problems"])
+    assert result.exit_code == 0, result.output
+    assert "2.3.1–2.3.3 ⚠" in result.output

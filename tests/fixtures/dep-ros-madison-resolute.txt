@@ -1,0 +1,2 @@
+ libbullet-dev   | 3.24+dfsg-5            | resolute/universe | amd64
+ libogre-1.9-dev | 1.9.0+dfsg1-14.1build5 | resolute/universe | amd64

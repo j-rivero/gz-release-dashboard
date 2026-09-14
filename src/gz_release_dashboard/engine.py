@@ -131,6 +131,21 @@ def rosdistro_of(platform: str) -> str:
     return platform.split("@", 1)[0]
 
 
+def carries_collection(carried: set[tuple[str, int]], collection: Collection) -> bool:
+    """Whether ``carried`` holds a real share of ``collection``'s libraries.
+
+    Majors are shared between collections, so a repository holding one of a
+    collection's libraries has not taken that collection on. Rolling's owner
+    here and the ROS dependency inventory both ask this one question, so they
+    cannot disagree about which collection a rosdistro serves.
+    """
+    libraries = {(lib.name, lib.major) for lib in collection.libraries}
+    if not libraries:
+        return False
+    needed = max(1, round(len(libraries) * config.COLLECTION_PLATFORM_SHARE))
+    return len(libraries & carried) >= needed
+
+
 def rolling_collection(snapshot: Snapshot) -> str | None:
     """The one collection ROS Rolling is scored against, or ``None``.
 
@@ -153,11 +168,7 @@ def rolling_collection(snapshot: Snapshot) -> str | None:
         if rosdistro_of(record.platform) in config.ROLLING_ROSDISTROS
     }
     for collection in reversed(snapshot.collections):
-        libraries = {(lib.name, lib.major) for lib in collection.libraries}
-        if not libraries:
-            continue
-        needed = max(1, round(len(libraries) * config.COLLECTION_PLATFORM_SHARE))
-        if len(libraries & carried) >= needed:
+        if carries_collection(carried, collection):
             return collection.name
     return None
 

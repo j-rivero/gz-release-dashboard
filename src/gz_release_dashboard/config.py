@@ -78,6 +78,84 @@ ROS_GZ_DEB_CHANNELS = {
     "stable": f"{ROS_DEB_BASE}/ros2/ubuntu",
 }
 
+# --- dependencies ---------------------------------------------------------
+#: The dependencies Gazebo packages or vendors itself, and how each build
+#: system spells them. This is the one table in the dependency inventory that
+#: is declared rather than derived: which collection uses which dependency, and
+#: in which series, is read from each build's own declaration, but that
+#: `libdart6.16-dev`, `dartsim-cpp` and `gz-dartsim-vendor` are one thing is
+#: not written down anywhere upstream.
+#:
+#: Patterns are full-matched, so `libdart6.16-collision-bullet-dev` is not dart
+#: itself. ROS patterns match a vendor's name after `ros-<rosdistro>-`; the
+#: plain Debian names a ROS vendor depends on are matched with the `deb` ones.
+#: A dependency only ever shows where a live build declares it, so an entry
+#: nothing declares yet (mujoco) costs nothing.
+DEPENDENCY_ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
+    "ogre-next": {
+        # ogre 2.x is ogre-next whatever its Debian package is called.
+        "deb": (r"libogre-next(-\d+\.\d+)?-dev", r"libogre-2\.\d+-dev"),
+        "brew": (r"ogre2\.\d+",),
+        "conda": (r"ogre-next",),
+        "bazel": (r"ogre-next",),
+        "ros": (r"gz-ogre-next-vendor",),
+    },
+    "ogre": {
+        "deb": (r"libogre-1\.\d+-dev",),
+        "brew": (r"ogre1\.\d+",),
+        "conda": (r"ogre",),
+    },
+    "dart": {
+        "deb": (r"libdart(\d+\.\d+)?-dev",),
+        "brew": (r"dartsim(@[\d.]+)?",),
+        "conda": (r"dartsim-cpp", r"dartsim"),
+        "bazel": (r"dartsim",),
+        "ros": (r"gz-dartsim-vendor",),
+    },
+    "bullet": {
+        "deb": (r"libbullet-dev",),
+        "brew": (r"bullet(@[\d.]+)?",),
+        "conda": (r"bullet-cpp", r"bullet"),
+        "bazel": (r"bullet",),
+    },
+    "zenoh": {
+        "deb": (r"libzenohc-dev", r"libzenohcpp-dev"),
+        "conda": (r"libzenohc", r"zenoh-cpp"),
+        "bazel": (r"zenoh-c", r"zenoh-cpp"),
+        "ros": (r"zenoh-cpp-vendor",),
+    },
+    "mujoco": {
+        "deb": (r"libmujoco(-[\d.]+)?-dev",),
+        "brew": (r"mujoco",),
+        "conda": (r"mujoco",),
+        "bazel": (r"mujoco",),
+        "ros": (r"mujoco-vendor",),
+    },
+}
+#: Each dependency system follows one library source: it is fetched when that
+#: source is, and applies to a collection when that source does, so a
+#: collection never grows a dependency column its library table lacks.
+DEPENDENCY_SYSTEMS: dict[str, str] = {
+    "deb": "osrf_debian",
+    "bazel": "bazel_registry",
+    "conda": "conda_forge",
+    "brew": "homebrew",
+    "ros": "ros_vendor",
+}
+#: A packaging repository per (library, major), holding the debian/ tree the
+#: osrf packages are built from.
+GAZEBO_RELEASE_URL = "https://raw.githubusercontent.com/gazebo-release/{repo}/main/{path}"
+#: The Ubuntu archive team's madison: every package, suite and architecture we
+#: need in one small request, instead of a 19 MB universe index per
+#: distribution and architecture.
+MADISON_URL = "https://people.canonical.com/~ubuntu-archive/madison.cgi"
+UBUNTU_POCKETS = ("", "-updates", "-security")
+#: homebrew-core, for the dependencies the osrf/simulation tap does not carry.
+HOMEBREW_CORE_FORMULA_URL = "https://formulae.brew.sh/api/formula/{formula}.json"
+#: The MODULE.bazel of one registry version, pins included.
+BCR_MODULE_URL = "https://bcr.bazel.build/modules/{module}/{version}/MODULE.bazel"
+
+
 # --- status policy --------------------------------------------------------
 #: Staging channels: they may carry a prerelease newer than the latest stable
 #: tag, and whatever they are missing or holding stale is never a problem --

@@ -2,10 +2,13 @@ import pytest
 
 from gz_release_dashboard.versions import (
     GzVersion,
+    dependency_version,
     max_version,
     normalize_bcr,
     normalize_deb,
     normalize_plain,
+    series,
+    version_key,
 )
 
 
@@ -83,3 +86,41 @@ def test_normalize_bcr(raw, expected):
 def test_normalize_plain():
     assert normalize_plain("9.6.0") == "9.6.0"
     assert normalize_plain("9.6.0_2") is None
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("6.16.6+ds-1~osrf1~noble", "6.16.6"),
+        ("2.3.3+osrf1-4osrf~resolute", "2.3.3"),
+        ("6.13.2+ds-3fakesync1build7", "6.13.2"),
+        ("3.24+dfsg-2.1build1", "3.24"),
+        ("2.2.6+20211021~312bf40", "2.2.6"),
+        ("1.9-20160714-108ab0bcc69603dba32c0ffd4bbbc39051f421c9", "1.9"),
+        ("6.10.0~20211005~d2b6ee08a60d0dbf71b0f008cd8fed1f611f6e24", "6.10.0"),
+        ("3.26.0-rc0.bcr.1", "3.26.0"),
+        ("6.13.2.bcr.3", "6.13.2"),
+        ("v2.3.1", "2.3.1"),
+        ("1:9.6.0-1~jammy", "9.6.0"),
+        ("30", "30"),
+        ("vendor", None),
+        ("", None),
+        (None, None),
+    ],
+)
+def test_dependency_version_keeps_the_leading_dotted_number(raw, expected):
+    assert dependency_version(raw) == expected
+
+
+def test_dependency_versions_compare_numerically_ignoring_trailing_zeros():
+    assert version_key("1.9") == version_key("1.9.0")
+    assert version_key("1.10.12.1") > version_key("1.9.0")
+    assert version_key("2.3.1") < version_key("2.3.3")
+    assert version_key("6.9.0") < version_key("6.16.6")
+
+
+def test_series_is_major_and_minor_padded_with_zeros():
+    assert series("6.16.6") == (6, 16)
+    assert series("1.9") == (1, 9)
+    assert series("2.0.0") == series("2.0.5") == (2, 0)
+    assert series("30") == (30, 0)

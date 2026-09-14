@@ -1,0 +1,9 @@
+Package: libdart6.13-dev
+Source: dart
+Version: 6.13.2+ds1-1~osrf2~jammy
+Architecture: arm64
+
+Package: libogre-next-2.3-dev
+Source: ogre-next-2.3
+Version: 2.3.1-8osrf~jammy
+Architecture: arm64

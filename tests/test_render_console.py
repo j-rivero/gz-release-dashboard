@@ -3,6 +3,7 @@ from rich.console import Console
 from gz_release_dashboard import engine, snapshot as snap
 from gz_release_dashboard.models import (
     Collection,
+    DependencyRecord,
     FetchError,
     GroundTruthEntry,
     Library,
@@ -10,7 +11,7 @@ from gz_release_dashboard.models import (
     Status,
     StatusEntry,
 )
-from gz_release_dashboard.render import aggregate_cell, column_order
+from gz_release_dashboard.render import aggregate_cell, column_order, dependency_columns
 from gz_release_dashboard.render import console as console_render
 
 
@@ -199,3 +200,86 @@ def test_a_collection_older_than_a_source_does_not_get_its_column():
     fetched = ["osrf_debian", "bazel_registry"]
     assert ("bazel_registry", "") not in column_order(fetched, "harmonic")
     assert ("bazel_registry", "") in column_order(fetched, "ionic")
+
+
+def dependency(name, system, version, platform, *, library="gz-physics", major=9,
+               declared="", origin="osrf"):
+    return DependencyRecord(
+        collection="jetty", library=library, major=major, dependency=name,
+        system=system, platform=platform, declared=declared, version=version,
+        origin=origin,
+    )
+
+
+def build_dependency_snapshot():
+    """``build_snapshot`` plus two of jetty's dependencies as they stand.
+
+    dart diverges (◇): the Debian side ships 6.16 while conda-forge pins 6.19.
+    ogre-next warns (⚠): osrf noble never got the 2.3.3 resolute has.
+    """
+    s = build_snapshot()
+    s.sources_fetched = ["osrf_debian", "conda_forge"]
+    s.dependencies = [
+        dependency("dart", "deb", "6.16.6", "noble/amd64", declared="libdart6.16-dev"),
+        dependency("dart", "conda", "6.19.4", "linux-64",
+                   declared="dartsim-cpp >=6.19.4,<6.20.0a0", origin="conda-forge"),
+        dependency("ogre-next", "deb", "2.3.1", "noble/amd64", library="gz-rendering",
+                   major=10, declared="libogre-next-2.3-dev"),
+        dependency("ogre-next", "deb", "2.3.3", "resolute/amd64", library="gz-rendering",
+                   major=10, declared="libogre-next-2.3-dev"),
+    ]
+    return s
+
+
+def render_dependencies(**kwargs):
+    snapshot = build_dependency_snapshot()
+    console = Console(record=True, width=200, force_terminal=False)
+    count = console_render.render(
+        snapshot, engine.compute_statuses(snapshot), console, **kwargs
+    )
+    return count, console.export_text()
+
+
+def test_a_collection_gets_a_dependency_table_with_both_marks():
+    _, text = render_dependencies()
+    assert "dart ◇" in text
+    assert "2.3.1–2.3.3 ⚠" in text
+    assert "6.19.4" in text
+    assert "ogre-next ◇" not in text
+
+
+def test_dependency_columns_follow_the_order_and_reach_of_the_library_sources():
+    fetched = ["osrf_debian", "conda_forge", "homebrew", "bazel_registry", "ros_vendor"]
+    assert dependency_columns(fetched, "jetty") == ["deb", "bazel", "conda", "brew", "ros"]
+    # harmonic predates the Bazel modules, for its dependencies as for its libraries.
+    assert "bazel" not in dependency_columns(fetched, "harmonic")
+    assert dependency_columns(["osrf_debian"], "jetty") == ["deb"]
+
+
+def test_problems_only_prints_no_dependency_table():
+    _, text = render_dependencies(problems_only=True)
+    assert "dart" not in text
+
+
+def test_verbose_details_what_each_build_declares():
+    _, text = render_dependencies(verbose=True)
+    assert "libogre-next-2.3-dev" in text
+    assert "dartsim-cpp >=6.19.4,<6.20.0a0" in text
+    assert "gz-rendering10" in text
+
+
+def test_the_legend_explains_the_dependency_marks_once_there_are_dependencies():
+    _, text = render_dependencies()
+    assert "⚠ a system disagrees with itself" in text
+    assert "◇ systems on different series" in text
+    _, plain = render()
+    assert "◇" not in plain
+
+
+def test_dependencies_never_count_as_problems():
+    snapshot = build_dependency_snapshot()
+    entries = engine.compute_statuses(snapshot)
+    with_them = console_render.render(snapshot, entries, Console(record=True, width=200))
+    snapshot.dependencies = []
+    without = console_render.render(snapshot, entries, Console(record=True, width=200))
+    assert with_them == without
